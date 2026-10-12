@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Streaming musik dengan lirik, gratis tanpa iklan',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, title: APP.name, statusBarStyle: 'black-translucent' },
-  icons: { icon: '/icons/icon-192.png', apple: '/icons/icon-192.png' }
+  icons: { icon: '/icon-192.png', apple: '/icon-192.png' }
 };
 
 export const viewport: Viewport = {
