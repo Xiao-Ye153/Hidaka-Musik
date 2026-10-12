@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node -e \"const fs=require('fs');fs.mkdirSync('public',{recursive:true});['icon-192.png','icon-512.png'].forEach(f=>{if(fs.existsSync(f))fs.copyFileSync(f,'public/'+f)})\"",
     "build": "next build",
     "start": "next start"
   },
