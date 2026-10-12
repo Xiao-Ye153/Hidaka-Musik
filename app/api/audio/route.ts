@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { QUALITIES, resolveAudio } from '@/lib/savetube';
+import { QUALITIES, describeError, resolveAudio } from '@/lib/savetube';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,6 @@ export async function GET(req: Request) {
     const r = await resolveAudio(id, quality);
     return NextResponse.json(r, { headers: { 'Cache-Control': 'private, max-age=300' } });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Gagal';
-    return NextResponse.json({ error: msg }, { status: 502 });
+    return NextResponse.json({ error: describeError(e) }, { status: 502 });
   }
 }
