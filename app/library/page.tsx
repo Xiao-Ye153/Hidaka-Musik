@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Heart, ListMusic, Play, Search, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Download, Heart, ListMusic, Search, User } from 'lucide-react';
+import { useExtras } from '@/components/Extras';
+import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
 import { usePlayer } from '@/components/Providers';
 
@@ -14,15 +17,61 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
+function parseListId(input: string) {
+  const m = input.match(/[?&]list=([\w-]+)/);
+  if (m) return m[1];
+  return /^[\w-]{10,}$/.test(input.trim()) ? input.trim() : '';
+}
+
 export default function LibraryPage() {
-  const { liked, current, play } = usePlayer();
+  const router = useRouter();
+  const { liked } = usePlayer();
+  const { playlists, artists, createPlaylist } = useExtras();
   const [tab, setTab] = useState<TabId>('liked');
+  const [newName, setNewName] = useState('');
+  const [link, setLink] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const create = () => {
+    if (!newName.trim()) return;
+    const id = createPlaylist(newName);
+    setNewName('');
+    router.push(`/playlist?id=${id}`);
+  };
+
+  const importList = async () => {
+    const id = parseListId(link);
+    if (!id) {
+      setMsg('Link playlist tidak dikenali.');
+      return;
+    }
+    setBusy(true);
+    setMsg('');
+    try {
+      const r = await fetch(`/api/playlist?list=${encodeURIComponent(id)}`);
+      const d = await r.json();
+      if (!r.ok || !Array.isArray(d.tracks)) throw new Error(d?.error || 'gagal');
+      const tracks = d.tracks.map((t: { id: string; title: string; channel?: string; thumb?: string }) => ({
+        id: t.id,
+        title: t.title,
+        artist: t.channel || '',
+        thumb: t.thumb
+      }));
+      const pid = createPlaylist(d.title || 'Playlist YouTube Music', tracks);
+      setLink('');
+      router.push(`/playlist?id=${pid}`);
+    } catch {
+      setMsg('Playlist tidak bisa diimpor. Pastikan linknya publik.');
+    }
+    setBusy(false);
+  };
 
   return (
     <>
       <h1 className="page-title">Library</h1>
       <p className="page-sub">
-        {liked.length} lagu · 0 artis · 0 playlist
+        {liked.length} lagu · {artists.length} artis · {playlists.length} playlist
       </p>
 
       <div className="tabs glass-soft" role="tablist">
@@ -41,32 +90,75 @@ export default function LibraryPage() {
         ))}
       </div>
 
-      {tab === 'liked' && liked.length > 0 ? (
+      {tab === 'liked' && liked.length > 0 && (
         <div className="track-list" style={{ marginTop: 22 }}>
           {liked.map((t, i) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`row glass-soft${current?.id === t.id ? ' now' : ''}`}
-              onClick={() => play(t, liked)}
-            >
-              <span className="row-num">{String(i + 1).padStart(2, '0')}</span>
-              <TrackThumb track={t} className="thumb" />
-              <span className="row-body">
-                <span className="row-title" style={{ display: 'block' }}>
-                  {t.title}
-                </span>
-                <span className="row-sub" style={{ display: 'block' }}>
-                  {t.artist}
-                </span>
-              </span>
-              <span className="row-play">
-                <Play size={18} fill="currentColor" />
-              </span>
-            </button>
+            <TrackRow key={t.id} track={t} index={i} queue={liked} />
           ))}
         </div>
-      ) : (
+      )}
+
+      {tab === 'artist' && artists.length > 0 && (
+        <div className="track-list" style={{ marginTop: 22 }}>
+          {artists.map((a) => (
+            <Link key={a} href={`/artist?name=${encodeURIComponent(a)}`} className="row glass-soft">
+              <span className="avatar" style={{ width: 52, height: 52, fontSize: 20 }}>
+                {a.charAt(0).toUpperCase()}
+              </span>
+              <span className="row-body">
+                <span className="row-title" style={{ display: 'block' }}>
+                  {a}
+                </span>
+                <span className="row-sub" style={{ display: 'block' }}>
+                  Artis
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {tab === 'playlist' && (
+        <>
+          <div className="pl-form" style={{ marginTop: 22 }}>
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nama playlist baru" onKeyDown={(e) => e.key === 'Enter' && create()} />
+            <button type="button" onClick={create}>
+              Buat
+            </button>
+          </div>
+          <div className="pl-form">
+            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Tempel link playlist YouTube Music" />
+            <button type="button" onClick={importList} disabled={busy} aria-label="Impor">
+              <Download size={18} />
+            </button>
+          </div>
+          {msg ? <p className="greeting-sub" style={{ fontSize: 14 }}>{msg}</p> : null}
+
+          <div className="track-list" style={{ marginTop: 18 }}>
+            {playlists.map((p) => (
+              <Link key={p.id} href={`/playlist?id=${p.id}`} className="row glass-soft">
+                {p.tracks[0] ? (
+                  <TrackThumb track={p.tracks[0]} className="thumb" />
+                ) : (
+                  <span className="thumb" style={{ background: 'var(--surface2)' }}>
+                    <ListMusic size={24} />
+                  </span>
+                )}
+                <span className="row-body">
+                  <span className="row-title" style={{ display: 'block' }}>
+                    {p.name}
+                  </span>
+                  <span className="row-sub" style={{ display: 'block' }}>
+                    {p.tracks.length} lagu
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {((tab === 'liked' && liked.length === 0) || (tab === 'artist' && artists.length === 0) || (tab === 'playlist' && playlists.length === 0)) && (
         <div className="empty glass-soft">
           <div className="empty-orb" />
           {tab === 'liked' && (
@@ -80,13 +172,13 @@ export default function LibraryPage() {
           {tab === 'artist' && (
             <>
               <h3>Belum Ada Artis</h3>
-              <p>Subscribe artis dari halaman artis, dan mereka akan muncul di sini.</p>
+              <p>Buka halaman artis dari pemutar, lalu ikuti artis favoritmu.</p>
             </>
           )}
           {tab === 'playlist' && (
             <>
               <h3>Belum Ada Playlist</h3>
-              <p>Buat playlist pertamamu dan kumpulkan lagu favorit di satu tempat.</p>
+              <p>Buat playlist di atas atau impor dari link YouTube Music.</p>
             </>
           )}
           <Link href="/search" className="pill-btn">
