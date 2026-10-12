@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Bell, ChevronRight, Coffee, Download, Heart, History, LayoutList, LogOut, Link2, MessageCircle, Mic2, Monitor, Palette, User } from 'lucide-react';
 import { APP } from '@/lib/config';
 import { THEMES } from '@/lib/themes';
+import IconAvatar from '@/components/IconAvatar';
 import { usePlayer, useTheme } from '@/components/Providers';
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
@@ -55,7 +56,7 @@ export default function SettingsPage() {
     <>
       <section className="settings-hero">
         <div className="settings-cover">
-          <div className="avatar">{APP.nameTop.charAt(0)}</div>
+          <IconAvatar />
         </div>
         <h2>{APP.name}</h2>
         <p>{APP.tagline}</p>
@@ -161,9 +162,7 @@ export default function SettingsPage() {
         <div className="kv" style={{ marginTop: 20 }}>
           <span>Developed by</span>
           <b style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="avatar" style={{ width: 28, height: 28, fontSize: 13 }}>
-              {APP.developer.charAt(0)}
-            </span>
+            <IconAvatar size={28} />
             {APP.developer}
           </b>
         </div>
