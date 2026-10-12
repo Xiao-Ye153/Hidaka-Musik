@@ -1,27 +1,31 @@
 'use client';
 
 import { Heart, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
+import { useExtras } from './Extras';
 import { usePlayer, useProgress } from './Providers';
 import TrackThumb from './TrackThumb';
 
 export default function MiniPlayer() {
   const { current, playing, buffering, toggle, next, prev, close, isLiked, toggleLike } = usePlayer();
   const { time, duration } = useProgress();
+  const { openFull } = useExtras();
   if (!current) return null;
   const liked = isLiked(current.id);
   const pct = duration > 0 ? Math.min(100, (time / duration) * 100) : 0;
 
   return (
     <div className={`mini glass${playing ? ' playing' : ''}`}>
-      <TrackThumb track={current} className="thumb sm" />
-      <div className="row-body">
-        <div className="row-title" style={{ fontSize: 15 }}>
-          {current.title}
+      <button type="button" className="mini-hit" onClick={openFull} aria-label="Buka pemutar">
+        <TrackThumb track={current} className="thumb sm" />
+        <div className="row-body">
+          <div className="row-title" style={{ fontSize: 15 }}>
+            {current.title}
+          </div>
+          <div className="row-sub" style={{ fontSize: 13, marginTop: 3 }}>
+            {current.artist}
+          </div>
         </div>
-        <div className="row-sub" style={{ fontSize: 13, marginTop: 3 }}>
-          {current.artist}
-        </div>
-      </div>
+      </button>
       <div className="mini-ctrl">
         <button type="button" onClick={prev} aria-label="Sebelumnya">
           <SkipBack size={18} fill="currentColor" />
