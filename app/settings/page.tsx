@@ -6,12 +6,14 @@ import { Bell, ChevronRight, Coffee, Download, Heart, History, LayoutList, LogOu
 import { APP } from '@/lib/config';
 import { THEMES } from '@/lib/themes';
 import IconAvatar from '@/components/IconAvatar';
+import { useExtras } from '@/components/Extras';
 import { usePlayer, useTheme } from '@/components/Providers';
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
 export default function SettingsPage() {
-  const { liked } = usePlayer();
+  const { liked, recent } = usePlayer();
+  const { playlists, artists } = useExtras();
   const { theme, openSheet } = useTheme();
   const [notif, setNotif] = useState<NotificationPermission | 'unsupported'>('default');
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null);
@@ -95,17 +97,17 @@ export default function SettingsPage() {
           </div>
           <div className="stat">
             <LayoutList size={22} />
-            <b>0</b>
+            <b>{playlists.length}</b>
             <span>Playlist</span>
           </div>
           <div className="stat">
             <Mic2 size={22} />
-            <b>0</b>
+            <b>{artists.length}</b>
             <span>Artis</span>
           </div>
           <div className="stat">
             <History size={22} />
-            <b>0</b>
+            <b>{recent.length}</b>
             <span>Terakhir</span>
           </div>
         </div>
