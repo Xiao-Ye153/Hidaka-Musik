@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import './fresh.css';
 import Providers from '@/components/Providers';
 import AppShell from '@/components/AppShell';
 import { APP } from '@/lib/config';
@@ -18,14 +19,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#08080a'
+  themeColor: '#061b26'
 };
 
 const themeScript = `try{var t=localStorage.getItem('hm_theme');if(t){document.documentElement.setAttribute('data-theme',t)}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="id" data-theme="dark" suppressHydrationWarning>
+    <html lang="id" data-theme="sea" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
