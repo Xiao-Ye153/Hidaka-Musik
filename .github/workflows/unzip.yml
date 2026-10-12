@@ -1,0 +1,29 @@
+name: Unzip
+on:
+  push:
+    paths: ['*.zip']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract
+        run: |
+          for z in *.zip; do
+            unzip -oq "$z"
+            rm "$z"
+          done
+          if [ -d hidaka-music-next ]; then
+            cp -a hidaka-music-next/. .
+            rm -rf hidaka-music-next
+          fi
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract zip" || exit 0
+          git push
