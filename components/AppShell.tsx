@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import BottomNav from './BottomNav';
 import MiniPlayer from './MiniPlayer';
+import Splash from './Splash';
 import ThemeSheet from './ThemeSheet';
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -12,6 +13,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <MiniPlayer />
       <BottomNav />
       <ThemeSheet />
+      <Splash />
     </>
   );
 }
