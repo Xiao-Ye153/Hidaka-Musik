@@ -181,30 +181,8 @@
   box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.ftabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  margin-top: 14px;
-  padding: 4px;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
 
-.ftab {
-  height: 38px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text2);
-}
 
-.ftab.active {
-  color: var(--ink);
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
-  font-weight: 700;
-}
 
 .full-actions {
   display: flex;
@@ -231,7 +209,6 @@
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
 }
 
-.lyrics,
 .queue {
   width: 100%;
   height: 100%;
@@ -239,42 +216,13 @@
   scrollbar-width: none;
 }
 
-.lyrics::-webkit-scrollbar,
 .queue::-webkit-scrollbar {
   display: none;
 }
 
-.lyrics {
-  padding: 30px 4px;
-  text-align: center;
-  -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent);
-  mask: linear-gradient(transparent, #000 12%, #000 88%, transparent);
-}
 
-.ly {
-  display: block;
-  width: 100%;
-  padding: 6px 0;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: var(--text2);
-  opacity: 0.5;
-  transition: opacity 0.25s ease, color 0.25s ease, font-size 0.25s ease;
-}
 
-.ly.on {
-  color: var(--text);
-  opacity: 1;
-  font-size: 23px;
-}
 
-.lyplain {
-  white-space: pre-wrap;
-  font-size: 17px;
-  line-height: 1.7;
-  color: var(--text2);
-}
 
 .stage-msg {
   text-align: center;
@@ -400,4 +348,210 @@
   font-size: 16px;
   line-height: 1.6;
   color: var(--text2);
+}
+
+.swap {
+  position: relative;
+  width: min(76vw, 330px);
+  aspect-ratio: 1;
+}
+
+.swap .full-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swap-lyrics {
+  --lyb: color-mix(in srgb, var(--text) 6%, var(--bg));
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--lyb);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swap.show-lyrics .full-art {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.swap.show-lyrics .swap-lyrics {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.lyrics-box {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lyrics-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.lyrics-scroll-inner {
+  position: relative;
+  height: 100%;
+  padding: 40% 24px 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow-y: auto;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lyrics-scroll-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.lyrics-wrap::before,
+.lyrics-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lyrics-wrap::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--lyb) 0%, transparent 100%);
+}
+
+.lyrics-wrap::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--lyb) 0%, transparent 100%);
+}
+
+.lyrics-line {
+  display: block;
+  width: 100%;
+  margin-bottom: 24px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.55;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--text) 25%, transparent);
+  opacity: 0.35;
+  transform: scale(0.88);
+  transform-origin: center center;
+  will-change: transform, opacity, color;
+  transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), text-shadow 0.4s ease;
+}
+
+.lyrics-line.prev1 {
+  color: color-mix(in srgb, var(--text) 50%, transparent);
+  opacity: 0.55;
+  transform: scale(0.94);
+}
+
+.lyrics-line.prev2 {
+  color: color-mix(in srgb, var(--text) 30%, transparent);
+  opacity: 0.38;
+  transform: scale(0.89);
+}
+
+.lyrics-line.active {
+  color: var(--text);
+  opacity: 1;
+  transform: scale(1.08);
+  text-shadow: 0 0 40px color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+.lyrics-line.next1 {
+  color: color-mix(in srgb, var(--text) 35%, transparent);
+  opacity: 0.42;
+  transform: scale(0.93);
+}
+
+.lyrics-line.next2 {
+  color: color-mix(in srgb, var(--text) 20%, transparent);
+  opacity: 0.28;
+  transform: scale(0.88);
+}
+
+.lyrics-source {
+  padding: 8px 16px 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.lyrics-loading {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.spin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--text) 15%, transparent);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.full-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 12px -20px -16px;
+  padding: 8px 0 10px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+}
+
+.btab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.btab.active {
+  color: var(--text);
+}
+
+.btab svg {
+  width: 20px;
+  height: 20px;
 }
