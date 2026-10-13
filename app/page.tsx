@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowUpRight, AudioLines, Heart, Moon, Music2, Pause, Play, Sparkles, TrendingUp } from 'lucide-react';
 import PageTop from '@/components/PageTop';
+import { Featured, MoreSections, SpeedDial } from '@/components/HomeSections';
 import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
 import { useAuth } from '@/components/AuthProvider';
 import { usePlayer } from '@/components/Providers';
 import { searchTracks } from '@/lib/api';
-import { HOME_CHIPS, type Track } from '@/lib/tracks';
+import { HOME_CHIPS, HOME_QUERIES, type Track } from '@/lib/tracks';
 
-const CHIP_ICON: Record<string, typeof Music2 | null> = {
+const CHIP_ICON: Record<string, typeof Music2 | null | undefined> = {
   all: null,
   sparkles: Sparkles,
   trending: TrendingUp,
@@ -33,6 +34,7 @@ export default function HomePage() {
   const { handle } = useAuth();
   const { current, playing, recent, play, toggle, isLiked, toggleLike } = usePlayer();
   const [chip, setChip] = useState('all');
+  const randomQ = useRef(HOME_QUERIES[Math.floor(Math.random() * HOME_QUERIES.length)]);
   const [hello, setHello] = useState('Halo, selamat menikmati musik.');
   const [picks, setPicks] = useState<Track[]>([]);
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -43,9 +45,10 @@ export default function HomePage() {
 
   useEffect(() => {
     const ctl = new AbortController();
-    const q = HOME_CHIPS.find((c) => c.id === chip)?.q ?? HOME_CHIPS[0].q;
+    const found = HOME_CHIPS.find((c) => c.id === chip);
+    const q = found?.q || randomQ.current;
     setStatus('loading');
-    searchTracks(q, 8, ctl.signal)
+    searchTracks(q, 24, ctl.signal)
       .then((r) => {
         setPicks(r);
         setStatus('ok');
@@ -165,12 +168,19 @@ export default function HomePage() {
         </Link>
       </div>
 
+      <Featured tracks={picks} />
+      <SpeedDial tracks={picks} />
+
       <div className="section-head">
         <h2 className="section-title">Pilihan harian</h2>
-        <Link href="/search" className="section-link">
-          Lihat semua
-          <ArrowUpRight size={17} />
-        </Link>
+        <button
+          type="button"
+          className="hs-btn"
+          disabled={picks.length === 0}
+          onClick={() => picks[0] && play(picks[0], picks)}
+        >
+          Putar semua
+        </button>
       </div>
 
       {status === 'loading' && <p className="greeting-sub">Memuat lagu...</p>}
@@ -180,7 +190,7 @@ export default function HomePage() {
       {status === 'ok' && picks.length === 0 && <p className="greeting-sub">Belum ada lagu untuk kategori ini.</p>}
 
       <div className="track-list">
-        {picks.map((t, i) => (
+        {picks.slice(0, 8).map((t, i) => (
           <TrackRow key={t.id} track={t} index={i} queue={picks} />
         ))}
       </div>
@@ -203,6 +213,8 @@ export default function HomePage() {
           </div>
         </>
       )}
+    
+      <MoreSections tracks={picks} />
     </>
   );
 }
