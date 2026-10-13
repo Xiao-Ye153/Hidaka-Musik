@@ -1,100 +1,132 @@
 'use client';
 
+import '../home.css';
 import { Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, Play, UserCheck, UserPlus } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Play, Radio } from 'lucide-react';
 import { useExtras } from '@/components/Extras';
 import { usePlayer } from '@/components/Providers';
+import { LazyRow, Spin } from '@/components/Rows';
 import TrackRow from '@/components/TrackRow';
-import { searchTracks } from '@/lib/api';
+import { cleanArtistName, hiRes, searchTracks } from '@/lib/api';
 import type { Track } from '@/lib/tracks';
 
 function ArtistView() {
+  const router = useRouter();
   const params = useSearchParams();
   const name = (params.get('name') || '').trim();
+  const clean = cleanArtistName(name) || name;
   const { play } = usePlayer();
   const { isFollowing, toggleArtist } = useExtras();
   const [songs, setSongs] = useState<Track[]>([]);
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [bio, setBio] = useState('');
+  const [bioLoading, setBioLoading] = useState(true);
 
   useEffect(() => {
     if (!name) return;
     const ctl = new AbortController();
     setStatus('loading');
-    setBio('');
-    searchTracks(name, 20, ctl.signal)
-      .then((r) => {
+    setSongs([]);
+    (async () => {
+      try {
+        let r = await searchTracks(`${clean} official music video`, 10, ctl.signal);
+        if (r.length < 3) r = await searchTracks(`${clean} song`, 10, ctl.signal);
+        if (r.length < 3) r = await searchTracks(clean, 10, ctl.signal);
         setSongs(r);
         setStatus('ok');
-      })
-      .catch((e) => {
-        if (e?.name !== 'AbortError') setStatus('error');
-      });
-    fetch(`/api/artist-bio?name=${encodeURIComponent(name)}&lang=id`, { signal: ctl.signal })
+      } catch (e) {
+        if ((e as Error)?.name !== 'AbortError') setStatus('error');
+      }
+    })();
+    setBio('');
+    setBioLoading(true);
+    fetch(`/api/artist-bio?name=${encodeURIComponent(clean)}&lang=id`, { signal: ctl.signal })
       .then((r) => r.json())
       .then((d) => {
         if (d?.bio) setBio(String(d.bio));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setBioLoading(false));
     return () => ctl.abort();
-  }, [name]);
+  }, [name, clean]);
 
-  if (!name) {
-    return <p className="greeting-sub">Nama artis tidak ada.</p>;
-  }
+  if (!name) return <p className="greeting-sub">Nama artis tidak ada.</p>;
 
   const following = isFollowing(name);
+  const hero = songs[0]?.thumb ? hiRes(songs[0].thumb) : undefined;
+
+  const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    else router.push('/');
+  };
+
+  const radio = async () => {
+    try {
+      const r = await searchTracks(`${clean} similar artists mix radio`, 12);
+      if (r.length) play(r[0], r);
+    } catch {}
+  };
 
   return (
     <>
-      <div className="back-row">
-        <Link href="/library" className="round-btn" aria-label="Kembali">
-          <ChevronLeft size={22} />
-        </Link>
+      <div className="ap-hero">
+        {hero ? <img src={hero} alt="" /> : null}
+        <button type="button" className="ap-back" onClick={goBack} aria-label="Kembali">
+          <ArrowLeft size={20} />
+        </button>
+        <div className="ap-name">{name}</div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 10 }}>
-        <span className="avatar" style={{ width: 84, height: 84, fontSize: 34 }}>
-          {name.charAt(0).toUpperCase()}
-        </span>
-        <div style={{ minWidth: 0 }}>
-          <h1 className="page-title" style={{ margin: 0, fontSize: 30 }}>
-            {name}
-          </h1>
-          <p className="page-sub" style={{ marginTop: 4 }}>
-            Artis
-          </p>
+      <div className="ap-actions">
+        <button type="button" className={`ap-btn${following ? ' on' : ''}`} onClick={() => toggleArtist(name)}>
+          {following ? 'Subscribed' : 'Subscribe'}
+        </button>
+        <button type="button" className="ap-btn" onClick={radio}>
+          <Radio size={16} />
+          Radio
+        </button>
+        <button
+          type="button"
+          className="ap-play"
+          disabled={songs.length === 0}
+          onClick={() => songs[0] && play(songs[0], songs)}
+          aria-label="Putar"
+        >
+          <Play size={22} fill="currentColor" />
+        </button>
+      </div>
+
+      <div className="ap-about">
+        <h3>Tentang</h3>
+        <div className="ap-badge">Artis • {name}</div>
+        <div className="ap-text">
+          {bioLoading
+            ? 'Memuat info artis...'
+            : bio || `Dengarkan karya-karya terbaik dari ${clean}. Jelajahi lagu populer, album terbaru, dan single yang telah dirilis.`}
         </div>
       </div>
 
-      <div className="big-actions">
-        <button
-          type="button"
-          className="pill-btn accent"
-          disabled={songs.length === 0}
-          onClick={() => songs[0] && play(songs[0], songs)}
-        >
-          <Play size={18} fill="currentColor" />
-          Putar
-        </button>
-        <button type="button" className="pill-btn" onClick={() => toggleArtist(name)}>
-          {following ? <UserCheck size={18} /> : <UserPlus size={18} />}
-          {following ? 'Diikuti' : 'Ikuti'}
-        </button>
-      </div>
+      <section className="hs">
+        <div className="hs-head">
+          <h2 className="hs-title">Top songs</h2>
+        </div>
+        {status === 'loading' && <Spin />}
+        {status === 'error' && <p className="hs-note">Lagu belum bisa dimuat.</p>}
+        <div className="track-list">
+          {songs.map((t, i) => (
+            <TrackRow key={t.id} track={t} index={i} queue={songs} />
+          ))}
+        </div>
+      </section>
 
-      {bio ? <p className="bio">{bio}</p> : null}
-
-      <h2 className="section-title">Lagu</h2>
-      {status === 'loading' && <p className="greeting-sub">Memuat lagu...</p>}
-      {status === 'error' && <p className="greeting-sub">Lagu belum bisa dimuat.</p>}
-      <div className="track-list">
-        {songs.map((t, i) => (
-          <TrackRow key={t.id} track={t} index={i} queue={songs} />
-        ))}
-      </div>
+      {status === 'ok' && (
+        <>
+          <LazyRow title="Singles & EPs" q={`${clean} single EP official audio 2024 2025`} max={8} />
+          <LazyRow title="Videos" q={`${clean} official music video mv`} max={6} variant="video" />
+          <LazyRow title="Featured on" q={`${clean} featured collaboration playlist`} max={6} />
+        </>
+      )}
     </>
   );
 }
