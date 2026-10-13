@@ -184,7 +184,7 @@ export default function FullPlayer() {
               </div>
             ) : (
               <div className={`swap${view === 'lyrics' ? ' show-lyrics' : ''}`}>
-                <TrackThumb track={current} className="full-art" />
+                <TrackThumb track={current} className="full-art" hires />
                 <div className="swap-lyrics">
                   <div className="lyrics-box">
                     {(lyState === 'loading' || lyState === 'idle') && (
