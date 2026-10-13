@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import { Heart, MessageCircle, Search } from 'lucide-react';
+import { useAuth } from './AuthProvider';
 import { APP } from '@/lib/config';
 
 export default function PageTop() {
+  const { photo } = useAuth();
   return (
     <header className="top">
       <Link href="/profile" className="avatar-ring" aria-label="Profil">
         <div className="avatar" style={{ fontSize: 22 }}>
-          {APP.nameTop.charAt(0)}
+          {photo ? <img src={photo} alt="" referrerPolicy="no-referrer" /> : APP.nameTop.charAt(0)}
         </div>
       </Link>
       <div className="brand">
