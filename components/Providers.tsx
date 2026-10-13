@@ -121,6 +121,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const engineRef = useRef<'audio' | 'yt'>('audio');
   const reqRef = useRef(0);
+  const ensureYTRef = useRef<() => void>(() => {});
   const stepRef = useRef<(dir: 1 | -1, auto: boolean) => void>(() => {});
   const fallbackRef = useRef<(t: Track) => void>(() => {});
   const [engine, setEngine] = useState<'audio' | 'yt'>('audio');
@@ -197,6 +198,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       ytRef.current.loadVideoById(t.id);
     } else {
       pendingRef.current = t.id;
+      ensureYTRef.current();
     }
   }, []);
 
@@ -353,7 +355,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
+  const ensureYT = useCallback(() => {
     const make = () => {
       if (ytRef.current || !window.YT || !window.YT.Player) return;
       ytRef.current = new window.YT.Player('yt-host', {
@@ -410,6 +412,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       }
     }
   }, []);
+  ensureYTRef.current = ensureYT;
 
   useEffect(() => {
     if (!playing || engine !== 'yt') return;
