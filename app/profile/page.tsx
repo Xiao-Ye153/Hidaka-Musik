@@ -1,13 +1,15 @@
 'use client';
 
 import { Bell, LogOut, MessageCircle, Pencil, Plus, Share2 } from 'lucide-react';
-import { APP } from '@/lib/config';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function ProfilePage() {
+  const { user, handle, photo, logout } = useAuth();
+  const share0 = typeof window === 'undefined' ? '' : window.location.origin;
   const share = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const url = share0;
     try {
-      if (navigator.share) await navigator.share({ title: APP.name, url });
+      if (navigator.share) await navigator.share({ title: 'Hidaka Music', url });
       else await navigator.clipboard.writeText(url);
     } catch {}
   };
@@ -25,19 +27,19 @@ export default function ProfilePage() {
         <button type="button" className="round-btn" aria-label="Chat">
           <MessageCircle size={21} />
         </button>
-        <button type="button" className="round-btn" aria-label="Keluar">
+        <button type="button" className="round-btn" aria-label="Keluar" onClick={() => logout()} disabled={!user}>
           <LogOut size={21} />
         </button>
       </div>
 
       <section className="profile-main">
-        <div className="avatar profile-avatar">{APP.defaultUser.charAt(0).toUpperCase()}</div>
+        <div className="avatar profile-avatar">{photo ? <img src={photo} alt="" referrerPolicy="no-referrer" /> : handle.charAt(0).toUpperCase()}</div>
         <button type="button" className="pill-btn profile-edit" style={{ height: 44, padding: '0 20px', fontSize: 15 }}>
           <Pencil size={17} />
           Edit profil
         </button>
 
-        <h1 className="profile-name">@{APP.defaultUser}</h1>
+        <h1 className="profile-name">@{handle}</h1>
         <p className="profile-bio">Belum ada bio. Ketuk Edit profil untuk menambahkannya.</p>
 
         <div className="profile-stats">
