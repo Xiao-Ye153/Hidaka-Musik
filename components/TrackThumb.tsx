@@ -1,3 +1,4 @@
+import { hiRes } from '@/lib/api';
 import type { Track } from '@/lib/tracks';
 
 const PALETTE = [
@@ -15,11 +16,11 @@ function hash(s: string) {
   return h;
 }
 
-export default function TrackThumb({ track, className }: { track: Track; className?: string }) {
+export default function TrackThumb({ track, className, hires }: { track: Track; className?: string; hires?: boolean }) {
   if (track.thumb) {
     return (
       <div className={className}>
-        <img src={track.thumb} alt="" loading="lazy" />
+        <img src={hires ? hiRes(track.thumb) : track.thumb} alt="" loading="lazy" />
       </div>
     );
   }
