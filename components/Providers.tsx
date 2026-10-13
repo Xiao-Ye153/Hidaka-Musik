@@ -38,6 +38,8 @@ type PlayerCtx = {
   recent: Track[];
   isLiked: (id: string) => boolean;
   toggleLike: (t: Track) => void;
+  setLikedAll: (t: Track[]) => void;
+  setRecentAll: (t: Track[]) => void;
   play: (t: Track, q?: Track[]) => void;
   toggle: () => void;
   next: () => void;
@@ -132,6 +134,20 @@ export default function Providers({ children }: { children: ReactNode }) {
       } catch {}
       return next;
     });
+  }, []);
+
+  const setLikedAll = useCallback((t: Track[]) => {
+    setLiked(t);
+    try {
+      localStorage.setItem(LIKED_KEY, JSON.stringify(t));
+    } catch {}
+  }, []);
+
+  const setRecentAll = useCallback((t: Track[]) => {
+    setRecent(t);
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify(t));
+    } catch {}
   }, []);
 
   const pushRecent = useCallback((t: Track) => {
@@ -480,6 +496,8 @@ export default function Providers({ children }: { children: ReactNode }) {
       recent,
       isLiked: (id) => liked.some((x) => x.id === id),
       toggleLike,
+      setLikedAll,
+      setRecentAll,
       play,
       toggle,
       next,
@@ -488,7 +506,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       seek,
       toggleRepeat
     }),
-    [current, queue, playing, buffering, repeat, liked, recent, toggleLike, play, toggle, next, prev, close, seek, toggleRepeat]
+    [current, queue, playing, buffering, repeat, liked, recent, toggleLike, setLikedAll, setRecentAll, play, toggle, next, prev, close, seek, toggleRepeat]
   );
 
   const progressValue = useMemo<ProgressCtx>(() => ({ time, duration }), [time, duration]);
