@@ -41,7 +41,7 @@ async function postJson(url: string, body: unknown) {
     headers: HEADERS,
     body: JSON.stringify(body),
     cache: 'no-store',
-    signal: AbortSignal.timeout(9000)
+    signal: AbortSignal.timeout(7000)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -54,7 +54,7 @@ async function getCdn(): Promise<string> {
       const res = await fetch(`${base}/api/random-cdn`, {
         headers: HEADERS,
         cache: 'no-store',
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(6000)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -67,7 +67,19 @@ async function getCdn(): Promise<string> {
   throw last;
 }
 
+const cache = new Map<string, { v: { url: string; title: string }; exp: number }>();
+
 export async function resolveAudio(videoId: string, quality = 128) {
+  const key = `${videoId}:${quality}`;
+  const hit = cache.get(key);
+  if (hit && hit.exp > Date.now()) return hit.v;
+  const v = await resolveFresh(videoId, quality);
+  cache.set(key, { v, exp: Date.now() + 4 * 60 * 1000 });
+  if (cache.size > 200) cache.delete(cache.keys().next().value as string);
+  return v;
+}
+
+async function resolveFresh(videoId: string, quality: number) {
   const cdn = await step('cdn', getCdn);
 
   const info = await step('info', async () => {
