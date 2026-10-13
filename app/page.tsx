@@ -7,9 +7,9 @@ import { ArrowUpRight, AudioLines, Heart, Moon, Music2, Pause, Play, Sparkles, T
 import PageTop from '@/components/PageTop';
 import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
+import { useAuth } from '@/components/AuthProvider';
 import { usePlayer } from '@/components/Providers';
 import { searchTracks } from '@/lib/api';
-import { APP } from '@/lib/config';
 import { HOME_CHIPS, type Track } from '@/lib/tracks';
 
 const CHIP_ICON: Record<string, typeof Music2 | null> = {
@@ -30,6 +30,7 @@ function greet(h: number) {
 
 export default function HomePage() {
   const router = useRouter();
+  const { handle } = useAuth();
   const { current, playing, recent, play, toggle, isLiked, toggleLike } = usePlayer();
   const [chip, setChip] = useState('all');
   const [hello, setHello] = useState('Halo, selamat menikmati musik.');
@@ -72,7 +73,7 @@ export default function HomePage() {
       <PageTop />
 
       <h1 className="greeting">
-        Hai, @{APP.defaultUser}
+        Hai, @{handle}
         <em>.</em>
       </h1>
       <p className="greeting-sub">{hello}</p>
