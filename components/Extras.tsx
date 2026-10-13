@@ -12,6 +12,8 @@ type ExtrasCtx = {
   addToPlaylist: (id: string, t: Track) => void;
   removeFromPlaylist: (id: string, trackId: string) => void;
   deletePlaylist: (id: string) => void;
+  setPlaylistsAll: (p: Playlist[]) => void;
+  setArtistsAll: (a: string[]) => void;
   artists: string[];
   toggleArtist: (name: string) => void;
   isFollowing: (name: string) => boolean;
@@ -117,6 +119,16 @@ export default function Extras({ children }: { children: ReactNode }) {
     [updatePlaylists]
   );
 
+  const setPlaylistsAll = useCallback((p: Playlist[]) => {
+    setPlaylists(p);
+    save(PL_KEY, p);
+  }, []);
+
+  const setArtistsAll = useCallback((a: string[]) => {
+    setArtists(a);
+    save(AR_KEY, a);
+  }, []);
+
   const toggleArtist = useCallback((name: string) => {
     setArtists((prev) => {
       const key = name.trim();
@@ -137,6 +149,8 @@ export default function Extras({ children }: { children: ReactNode }) {
       addToPlaylist,
       removeFromPlaylist,
       deletePlaylist,
+      setPlaylistsAll,
+      setArtistsAll,
       artists,
       toggleArtist,
       isFollowing: (name) => artists.includes(name.trim()),
@@ -149,7 +163,7 @@ export default function Extras({ children }: { children: ReactNode }) {
       openPicker: (t) => setPickerTrack(t),
       closePicker: () => setPickerTrack(null)
     }),
-    [playlists, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, artists, toggleArtist, fullOpen, sleepEnd, setSleep, pickerTrack]
+    [playlists, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, setPlaylistsAll, setArtistsAll, artists, toggleArtist, fullOpen, sleepEnd, setSleep, pickerTrack]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
