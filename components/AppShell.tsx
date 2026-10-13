@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import AuthProvider from './AuthProvider';
 import BottomNav from './BottomNav';
 import Extras from './Extras';
 import FullPlayer from './FullPlayer';
@@ -15,6 +16,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <Extras>
+      <AuthProvider>
       <main className="page">
         <div key={path} className="page-in">
           {children}
@@ -26,6 +28,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <ThemeSheet />
       <PlaylistSheet />
       <Splash />
+      </AuthProvider>
     </Extras>
   );
 }
