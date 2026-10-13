@@ -7,14 +7,17 @@ import {
   ChevronDown,
   Download,
   Heart,
+  ListMusic,
   ListPlus,
   Loader2,
   Moon,
   Pause,
+  Pencil,
   Play,
   Repeat,
   SkipBack,
-  SkipForward
+  SkipForward,
+  User
 } from 'lucide-react';
 import { fetchLyrics, type Lyrics } from '@/lib/lyrics';
 import { useExtras } from './Extras';
@@ -41,7 +44,8 @@ export default function FullPlayer() {
   const [lyState, setLyState] = useState<'idle' | 'loading' | 'none' | 'ok'>('idle');
   const [dlBusy, setDlBusy] = useState(false);
   const [note, setNote] = useState('');
-  const activeRef = useRef<HTMLButtonElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const cache = useRef<Map<string, Lyrics | null>>(new Map());
 
   useEffect(() => {
@@ -51,9 +55,9 @@ export default function FullPlayer() {
 
   useEffect(() => {
     if (view !== 'lyrics' || !current) return;
-    const cached = cache.current.get(current.id);
     if (cache.current.has(current.id)) {
-      setLyrics(cached ?? null);
+      const cached = cache.current.get(current.id) ?? null;
+      setLyrics(cached);
       setLyState(cached ? 'ok' : 'none');
       return;
     }
@@ -73,23 +77,42 @@ export default function FullPlayer() {
   }, [view, current?.id]);
 
   const synced = lyrics?.synced ?? [];
-  let active = -1;
-  for (let i = 0; i < synced.length; i++) {
-    if (synced[i].t <= time + 0.3) active = i;
-    else break;
+  const isSynced = synced.length > 0;
+  const lines: string[] = isSynced
+    ? synced.map((l) => l.text || '♪')
+    : (lyrics?.plain ?? '')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+  let active = 0;
+  if (isSynced) {
+    for (let i = 0; i < synced.length; i++) {
+      if (synced[i].t <= time) active = i;
+      else break;
+    }
+  } else if (lines.length > 0 && duration > 0) {
+    active = Math.min(Math.floor((time / duration) * lines.length), lines.length - 1);
   }
 
   useEffect(() => {
-    if (view === 'lyrics' && activeRef.current) {
-      activeRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  }, [active, view]);
+    if (view !== 'lyrics') return;
+    const sc = scrollRef.current;
+    const el = lineRefs.current[active];
+    if (!sc || !el) return;
+    sc.scrollTo({ top: el.offsetTop - sc.clientHeight / 2 + el.offsetHeight / 2, behavior: 'smooth' });
+  }, [active, view, lyState, lines.length]);
 
   useEffect(() => {
     if (!note) return;
     const id = setTimeout(() => setNote(''), 2600);
     return () => clearTimeout(id);
   }, [note]);
+
+  const seekLine = (i: number) => {
+    if (isSynced) seek(synced[i].t);
+    else if (lines.length > 0 && duration > 0) seek((i / lines.length) * duration);
+  };
 
   const download = async () => {
     if (!current || dlBusy) return;
@@ -118,6 +141,8 @@ export default function FullPlayer() {
     setNote(n ? `Timer tidur ${n} menit` : 'Timer tidur dimatikan');
   };
 
+  const toggleView = (v: View) => setView((cur) => (cur === v ? 'art' : v));
+
   const pct = duration > 0 ? Math.min(100, (time / duration) * 100) : 0;
   const liked = current ? isLiked(current.id) : false;
 
@@ -136,29 +161,7 @@ export default function FullPlayer() {
           </div>
 
           <div className="full-stage">
-            {view === 'art' && <TrackThumb track={current} className="full-art" />}
-
-            {view === 'lyrics' && (
-              <div className="lyrics">
-                {lyState === 'loading' && <p className="stage-msg">Mencari lirik...</p>}
-                {lyState === 'none' && <p className="stage-msg">Lirik untuk lagu ini belum ditemukan.</p>}
-                {lyState === 'ok' && synced.length > 0 &&
-                  synced.map((l, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      ref={i === active ? activeRef : null}
-                      className={`ly${i === active ? ' on' : ''}`}
-                      onClick={() => seek(l.t)}
-                    >
-                      {l.text || '♪'}
-                    </button>
-                  ))}
-                {lyState === 'ok' && synced.length === 0 && lyrics && <div className="lyplain">{lyrics.plain}</div>}
-              </div>
-            )}
-
-            {view === 'queue' && (
+            {view === 'queue' ? (
               <div className="queue">
                 {queue.map((t) => (
                   <button
@@ -178,6 +181,55 @@ export default function FullPlayer() {
                     </span>
                   </button>
                 ))}
+              </div>
+            ) : (
+              <div className={`swap${view === 'lyrics' ? ' show-lyrics' : ''}`}>
+                <TrackThumb track={current} className="full-art" />
+                <div className="swap-lyrics">
+                  <div className="lyrics-box">
+                    {(lyState === 'loading' || lyState === 'idle') && (
+                      <div className="lyrics-loading">
+                        <div className="spin" />
+                        <span>Memuat lirik...</span>
+                      </div>
+                    )}
+                    {lyState === 'none' && (
+                      <div className="lyrics-loading">
+                        <span style={{ fontSize: 15 }}>
+                          Lirik tidak tersedia 😔
+                          <br />
+                          <span style={{ fontSize: 12 }}>Coba lagu berbeda</span>
+                        </span>
+                      </div>
+                    )}
+                    {lyState === 'ok' && lines.length > 0 && (
+                      <>
+                        <div className="lyrics-wrap">
+                          <div className="lyrics-scroll-inner" ref={scrollRef}>
+                            {lines.map((txt, i) => {
+                              const d = i - active;
+                              const cls =
+                                d === 0 ? 'active' : d === -1 ? 'prev1' : d === -2 ? 'prev2' : d === 1 ? 'next1' : d === 2 ? 'next2' : '';
+                              return (
+                                <div
+                                  key={i}
+                                  ref={(el) => {
+                                    lineRefs.current[i] = el;
+                                  }}
+                                  className={`lyrics-line ${cls}`}
+                                  onClick={() => seekLine(i)}
+                                >
+                                  {txt}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="lyrics-source">Lirik dari LRCLIB</div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -241,14 +293,6 @@ export default function FullPlayer() {
             </button>
           </div>
 
-          <div className="ftabs">
-            {(['art', 'lyrics', 'queue'] as View[]).map((v) => (
-              <button key={v} type="button" className={`ftab${view === v ? ' active' : ''}`} onClick={() => setView(v)}>
-                {v === 'art' ? 'Lagu' : v === 'lyrics' ? 'Lirik' : 'Antrean'}
-              </button>
-            ))}
-          </div>
-
           <div className="full-actions">
             <button type="button" className="fa" onClick={() => openPicker(current)}>
               <ListPlus size={18} />
@@ -265,6 +309,26 @@ export default function FullPlayer() {
               {note}
             </p>
           ) : null}
+
+          <div className="full-tabs">
+            <button type="button" className={`btab${view === 'queue' ? ' active' : ''}`} onClick={() => toggleView('queue')}>
+              <ListMusic />
+              Up next
+            </button>
+            <button type="button" className={`btab${view === 'lyrics' ? ' active' : ''}`} onClick={() => toggleView('lyrics')}>
+              <Pencil />
+              Lyrics
+            </button>
+            <Link
+              href={`/artist?name=${encodeURIComponent(current.artist)}`}
+              className="btab"
+              onClick={closeFull}
+              aria-disabled={!current.artist}
+            >
+              <User />
+              Lihat artis
+            </Link>
+          </div>
         </div>
       ) : null}
     </div>
