@@ -33,6 +33,7 @@ type PlayerCtx = {
   queue: Track[];
   playing: boolean;
   buffering: boolean;
+  engine: 'audio' | 'yt';
   repeat: boolean;
   liked: Track[];
   recent: Track[];
@@ -54,6 +55,29 @@ type ProgressCtx = { time: number; duration: number };
 const ThemeContext = createContext<ThemeCtx | null>(null);
 const PlayerContext = createContext<PlayerCtx | null>(null);
 const ProgressContext = createContext<ProgressCtx>({ time: 0, duration: 0 });
+
+const urlCache = new Map<string, { url: string; at: number }>();
+
+async function resolveUrl(id: string): Promise<string> {
+  const hit = urlCache.get(id);
+  if (hit && Date.now() - hit.at < 4 * 60 * 1000) return hit.url;
+  let lastErr: unknown = new Error('gagal');
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await fetch(`/api/audio?id=${encodeURIComponent(id)}`);
+      const d = await r.json();
+      if (d?.url) {
+        urlCache.set(id, { url: d.url, at: Date.now() });
+        return d.url as string;
+      }
+      lastErr = new Error(d?.error || 'tanpa link');
+    } catch (e) {
+      lastErr = e;
+    }
+    await new Promise((res) => setTimeout(res, 500));
+  }
+  throw lastErr;
+}
 
 const LIKED_KEY = 'nada_liked';
 const RECENT_KEY = 'hm_recent';
@@ -199,16 +223,20 @@ export default function Providers({ children }: { children: ReactNode }) {
         return;
       }
       a.pause();
-      fetch(`/api/audio?id=${encodeURIComponent(t.id)}`)
-        .then((r) => r.json())
-        .then((d) => {
+      resolveUrl(t.id)
+        .then((url) => {
           if (rid !== reqRef.current) return;
-          if (!d || !d.url) throw new Error('tanpa link');
-          a.src = d.url;
+          a.src = url;
           return a.play();
         })
-        .catch(() => {
-          if (rid === reqRef.current) fallbackYT(t);
+        .catch((e: { name?: string }) => {
+          if (rid !== reqRef.current) return;
+          if (e?.name === 'NotAllowedError') {
+            setBuffering(false);
+            setPlaying(false);
+            return;
+          }
+          fallbackYT(t);
         });
     },
     [pushRecent, fallbackYT]
@@ -395,6 +423,18 @@ export default function Providers({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [playing, engine]);
 
+  useEffect(() => {
+    if (!current) return;
+    const q = queueRef.current;
+    const i = q.findIndex((x) => x.id === current.id);
+    const n = q[i + 1];
+    if (!n) return;
+    const id = setTimeout(() => {
+      resolveUrl(n.id).catch(() => {});
+    }, 4000);
+    return () => clearTimeout(id);
+  }, [current]);
+
   const toggle = useCallback(() => {
     if (engineRef.current === 'audio') {
       const a = audioRef.current;
@@ -491,6 +531,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       queue,
       playing,
       buffering,
+      engine,
       repeat,
       liked,
       recent,
@@ -506,7 +547,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       seek,
       toggleRepeat
     }),
-    [current, queue, playing, buffering, repeat, liked, recent, toggleLike, setLikedAll, setRecentAll, play, toggle, next, prev, close, seek, toggleRepeat]
+    [current, queue, playing, buffering, engine, repeat, liked, recent, toggleLike, setLikedAll, setRecentAll, play, toggle, next, prev, close, seek, toggleRepeat]
   );
 
   const progressValue = useMemo<ProgressCtx>(() => ({ time, duration }), [time, duration]);
