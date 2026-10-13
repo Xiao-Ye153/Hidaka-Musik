@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Bell, ChevronRight, Coffee, Download, Heart, History, LayoutList, LogOut, Link2, MessageCircle, Mic2, Monitor, Palette, User } from 'lucide-react';
 import { APP } from '@/lib/config';
 import { THEMES } from '@/lib/themes';
+import { useAuth } from '@/components/AuthProvider';
 import IconAvatar from '@/components/IconAvatar';
 import { useExtras } from '@/components/Extras';
 import { usePlayer, useTheme } from '@/components/Providers';
@@ -12,6 +13,7 @@ import { usePlayer, useTheme } from '@/components/Providers';
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
 export default function SettingsPage() {
+  const { user, handle, photo, logout } = useAuth();
   const { liked, recent } = usePlayer();
   const { playlists, artists } = useExtras();
   const { theme, openSheet } = useTheme();
@@ -66,22 +68,33 @@ export default function SettingsPage() {
 
       <section className="panel glass-soft">
         <div className="account">
-          <div className="avatar">{APP.defaultUser.charAt(0).toUpperCase()}</div>
+          <div className="avatar">
+            {photo ? <img src={photo} alt="" referrerPolicy="no-referrer" /> : user ? handle.charAt(0).toUpperCase() : '?'}
+          </div>
           <div>
             <small>Akunmu</small>
-            <b>@{APP.defaultUser}</b>
+            <b>{user ? `@${handle}` : 'Belum masuk'}</b>
           </div>
         </div>
-        <div className="btn-pair">
-          <Link href="/profile" className="pill-btn accent">
-            <User size={20} />
-            Profil
-          </Link>
-          <button type="button" className="pill-btn">
-            <LogOut size={20} />
-            Keluar
-          </button>
-        </div>
+        {user ? (
+          <div className="btn-pair">
+            <Link href="/profile" className="pill-btn accent">
+              <User size={20} />
+              Profil
+            </Link>
+            <button type="button" className="pill-btn" onClick={() => logout()}>
+              <LogOut size={20} />
+              Keluar
+            </button>
+          </div>
+        ) : (
+          <div className="btn-pair" style={{ gridTemplateColumns: '1fr' }}>
+            <Link href="/login" className="pill-btn accent">
+              <User size={20} />
+              Masuk / Daftar
+            </Link>
+          </div>
+        )}
       </section>
 
       <section className="panel glass-soft">
