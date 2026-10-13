@@ -10,6 +10,7 @@ import MiniPlayer from './MiniPlayer';
 import PlaylistSheet from './PlaylistSheet';
 import Splash from './Splash';
 import ThemeSheet from './ThemeSheet';
+import '../app/tweaks.css';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
