@@ -34,7 +34,7 @@ function fmt(s: number) {
 }
 
 export default function FullPlayer() {
-  const { current, queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
+  const { current, queue, playing, buffering, engine, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
   const { time, duration } = useProgress();
   const { fullOpen, closeFull, sleepEnd, setSleep, openPicker } = useExtras();
@@ -154,7 +154,12 @@ export default function FullPlayer() {
             <button type="button" className="full-ib" onClick={closeFull} aria-label="Tutup">
               <ChevronDown size={24} />
             </button>
-            <b>Sedang diputar</b>
+            <b>
+              Sedang diputar
+              <span style={{ display: 'block', marginTop: 2, fontSize: 10, letterSpacing: 1, textTransform: 'none', color: 'var(--muted)' }}>
+                {engine === 'audio' ? 'via SaveTube' : 'via YouTube (berhenti saat layar mati)'}
+              </span>
+            </b>
             <button type="button" className="full-ib" onClick={() => openPicker(current)} aria-label="Simpan ke playlist">
               <ListPlus size={22} />
             </button>
