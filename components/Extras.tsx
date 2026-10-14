@@ -25,6 +25,9 @@ type ExtrasCtx = {
   pickerTrack: Track | null;
   openPicker: (t: Track) => void;
   closePicker: () => void;
+  commentsOpen: boolean;
+  openComments: () => void;
+  closeComments: () => void;
 };
 
 const Ctx = createContext<ExtrasCtx | null>(null);
@@ -51,6 +54,7 @@ export default function Extras({ children }: { children: ReactNode }) {
   const [fullOpen, setFullOpen] = useState(false);
   const [sleepEnd, setSleepEnd] = useState<number | null>(null);
   const [pickerTrack, setPickerTrack] = useState<Track | null>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const playingRef = useRef(playing);
   playingRef.current = playing;
 
@@ -161,9 +165,12 @@ export default function Extras({ children }: { children: ReactNode }) {
       setSleep,
       pickerTrack,
       openPicker: (t) => setPickerTrack(t),
-      closePicker: () => setPickerTrack(null)
+      closePicker: () => setPickerTrack(null),
+      commentsOpen,
+      openComments: () => setCommentsOpen(true),
+      closeComments: () => setCommentsOpen(false)
     }),
-    [playlists, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, setPlaylistsAll, setArtistsAll, artists, toggleArtist, fullOpen, sleepEnd, setSleep, pickerTrack]
+    [playlists, createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, setPlaylistsAll, setArtistsAll, artists, toggleArtist, fullOpen, sleepEnd, setSleep, pickerTrack, commentsOpen]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
