@@ -345,3 +345,41 @@
 .swap {
   animation: panelIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+.swap-lyrics {
+  --lyb: var(--bg);
+  inset: -26px -16px;
+  border-radius: 0;
+  background: none;
+}
+
+.mq-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.mq {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.mq-seg {
+  display: inline-block;
+}
+
+.mq.on {
+  animation: mqScroll linear infinite;
+}
+
+.mq.on .mq-seg {
+  padding-right: 60px;
+}
+
+@keyframes mqScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
