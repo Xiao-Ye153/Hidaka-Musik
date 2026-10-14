@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import AuthProvider from './AuthProvider';
 import BottomNav from './BottomNav';
+import CommentsSheet from './CommentsSheet';
 import Extras from './Extras';
 import FullPlayer from './FullPlayer';
 import MiniPlayer from './MiniPlayer';
@@ -28,6 +29,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <BottomNav />
       <ThemeSheet />
       <PlaylistSheet />
+      <CommentsSheet />
       <Splash />
       </AuthProvider>
     </Extras>
