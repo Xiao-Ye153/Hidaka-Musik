@@ -28,8 +28,8 @@ export default function Splash() {
     try {
       sessionStorage.setItem('hm_splash', '1');
     } catch {}
-    const t1 = setTimeout(() => setHide(true), 1800);
-    const t2 = setTimeout(() => setShow(false), 2400);
+    const t1 = setTimeout(() => setHide(true), 10000);
+    const t2 = setTimeout(() => setShow(false), 10800);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -56,7 +56,7 @@ export default function Splash() {
       <div className="splash-name">{APP.name}</div>
       <div className="splash-sub">Menyiapkan musikmu</div>
       <div className="splash-bar">
-        <i />
+        <i style={{ animationDuration: '10s' }} />
       </div>
     </div>
   );
