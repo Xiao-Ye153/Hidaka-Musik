@@ -134,14 +134,15 @@ function FullBody({ track }: { track: Track }) {
   const lineEls = useMemo(
     () =>
       lines.map((txt, i) => {
-        const d = Math.abs(i - active);
+        const d = i - active;
+        const cls = d === 0 ? 'active' : d === -1 ? 'prev1' : d === -2 ? 'prev2' : d === 1 ? 'next1' : d === 2 ? 'next2' : '';
         return (
           <div
             key={i}
             ref={(el) => {
               lineRefs.current[i] = el;
             }}
-            className={`ly-line${d === 0 ? ' on' : d === 1 ? ' near' : ''}`}
+            className={`lyrics-line ${cls}`}
             onClick={() => seekLine(i)}
           >
             {txt}
@@ -221,33 +222,7 @@ function FullBody({ track }: { track: Track }) {
       </div>
 
       <div className="full-stage">
-        {view === 'art' && <TrackThumb track={track} className="full-art" hires />}
-
-        {view === 'lyrics' && (
-          <div className="ly-wrap">
-            {lyState === 'ok' && lines.length > 0 ? (
-              <>
-                <div
-                  className="ly-scroll"
-                  ref={scrollRef}
-                  onTouchStart={() => (userTs.current = Date.now())}
-                  onWheel={() => (userTs.current = Date.now())}
-                  onPointerDown={() => (userTs.current = Date.now())}
-                >
-                  {lineEls}
-                </div>
-                <div className="ly-fade t" />
-                <div className="ly-fade b" />
-              </>
-            ) : (
-              <div className="ly-empty">
-                {lyState === 'none' ? 'Lirik tidak tersedia 😔' : 'Memuat lirik...'}
-              </div>
-            )}
-          </div>
-        )}
-
-        {view === 'queue' && (
+        {view === 'queue' ? (
           <div className="un-wrap">
             <div className="un-head">Up Next</div>
             <div className="un-list">
@@ -283,6 +258,42 @@ function FullBody({ track }: { track: Track }) {
                   </button>
                 );
               })}
+            </div>
+          </div>
+        ) : (
+          <div className={`swap${view === 'lyrics' ? ' show-lyrics' : ''}`}>
+            <TrackThumb track={track} className="full-art" hires />
+            <div className="swap-lyrics">
+              <div className="lyrics-box">
+                {(lyState === 'loading' || lyState === 'idle') && (
+                  <div className="lyrics-loading">
+                    <div className="spin" />
+                    <span>Memuat lirik...</span>
+                  </div>
+                )}
+                {lyState === 'none' && (
+                  <div className="lyrics-loading">
+                    <span style={{ fontSize: 15 }}>
+                      Lirik tidak tersedia 😔
+                      <br />
+                      <span style={{ fontSize: 12 }}>Coba lagu berbeda</span>
+                    </span>
+                  </div>
+                )}
+                {lyState === 'ok' && lines.length > 0 && (
+                  <div className="lyrics-wrap">
+                    <div
+                      className="lyrics-scroll-inner"
+                      ref={scrollRef}
+                      onTouchStart={() => (userTs.current = Date.now())}
+                      onWheel={() => (userTs.current = Date.now())}
+                      onPointerDown={() => (userTs.current = Date.now())}
+                    >
+                      {lineEls}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
