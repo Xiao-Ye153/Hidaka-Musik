@@ -343,7 +343,7 @@
 
 .un-wrap,
 .swap {
-  animation: panelIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: panelIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .swap-lyrics {
@@ -382,4 +382,18 @@
   to {
     transform: translateX(-50%);
   }
+}
+
+.page-in {
+  animation-fill-mode: backwards;
+}
+
+.lyrics-wrap::before,
+.lyrics-wrap::after {
+  display: none;
+}
+
+.lyrics-wrap {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
 }
