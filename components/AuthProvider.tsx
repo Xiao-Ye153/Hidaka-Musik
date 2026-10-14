@@ -11,8 +11,10 @@ import {
   signInWithEmailAndPassword,
   signInWithPhoneNumber,
   signInWithPopup,
+  sendPasswordResetEmail,
   signInWithRedirect,
   signOut,
+  updateProfile,
   type ConfirmationResult,
   type User
 } from 'firebase/auth';
@@ -40,7 +42,8 @@ type AuthCtx = {
   photo: string | null;
   loginGoogle: () => Promise<string | null>;
   loginEmail: (email: string, pass: string) => Promise<string | null>;
-  registerEmail: (email: string, pass: string) => Promise<string | null>;
+  registerEmail: (name: string, email: string, pass: string) => Promise<string | null>;
+  resetPassword: (email: string) => Promise<string | null>;
   sendPhoneCode: (phone: string) => Promise<string | null>;
   confirmPhoneCode: (code: string) => Promise<string | null>;
   logout: () => Promise<void>;
@@ -58,6 +61,7 @@ function message(e: unknown) {
   const code = (e as { code?: string })?.code || '';
   const map: Record<string, string> = {
     'auth/invalid-email': 'Format email tidak valid.',
+    'auth/missing-email': 'Isi email dulu.',
     'auth/missing-password': 'Isi password dulu.',
     'auth/weak-password': 'Password minimal 6 karakter.',
     'auth/email-already-in-use': 'Email sudah terdaftar. Coba masuk.',
@@ -93,6 +97,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [rev, setRev] = useState(0);
 
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
@@ -210,9 +215,25 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const registerEmail = useCallback(async (email: string, pass: string) => {
+  const registerEmail = useCallback(async (name: string, email: string, pass: string) => {
     try {
-      await createUserWithEmailAndPassword(getAuth(fbApp()), email.trim(), pass);
+      const auth = getAuth(fbApp());
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
+      const nm = name.trim();
+      if (nm) {
+        await updateProfile(cred.user, { displayName: nm });
+        setDoc(doc(getFirestore(fbApp()), 'user_profiles', cred.user.uid), { displayName: nm }, { merge: true }).catch(() => {});
+        setRev((r) => r + 1);
+      }
+      return null;
+    } catch (e) {
+      return message(e);
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      await sendPasswordResetEmail(getAuth(fbApp()), email.trim());
       return null;
     } catch (e) {
       return message(e);
@@ -259,7 +280,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const handle = useMemo(() => {
     const base = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || 'tamu';
     return base.toLowerCase().replace(/\s+/g, '') || 'tamu';
-  }, [user]);
+  }, [user, rev]);
 
   const value = useMemo<AuthCtx>(
     () => ({
@@ -271,11 +292,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       loginGoogle,
       loginEmail,
       registerEmail,
+      resetPassword,
       sendPhoneCode,
       confirmPhoneCode,
       logout
     }),
-    [user, ready, synced, handle, loginGoogle, loginEmail, registerEmail, sendPhoneCode, confirmPhoneCode, logout]
+    [user, ready, synced, handle, loginGoogle, loginEmail, registerEmail, resetPassword, sendPhoneCode, confirmPhoneCode, logout, rev]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
