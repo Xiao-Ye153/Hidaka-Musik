@@ -57,6 +57,34 @@ export default function FullPlayer() {
   );
 }
 
+function Marquee({ text }: { text: string }) {
+  const wrap = useRef<HTMLDivElement | null>(null);
+  const seg = useRef<HTMLSpanElement | null>(null);
+  const [dur, setDur] = useState(0);
+
+  useEffect(() => {
+    setDur(0);
+    const id = requestAnimationFrame(() => {
+      const w = wrap.current;
+      const s = seg.current;
+      if (!w || !s) return;
+      if (s.scrollWidth > w.clientWidth) setDur(Math.max(8, (s.scrollWidth + 60) / 40));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [text]);
+
+  return (
+    <div className="mq-wrap" ref={wrap}>
+      <span className={`mq${dur ? ' on' : ''}`} style={dur ? { animationDuration: `${dur}s` } : undefined}>
+        <span className="mq-seg" ref={seg}>
+          {text}
+        </span>
+        {dur ? <span className="mq-seg">{text}</span> : null}
+      </span>
+    </div>
+  );
+}
+
 function FullBody({ track }: { track: Track }) {
   const { queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
@@ -301,7 +329,9 @@ function FullBody({ track }: { track: Track }) {
 
       <div className="full-info">
         <div className="t">
-          <div className="full-title">{track.title}</div>
+          <div className="full-title">
+            <Marquee text={track.title} />
+          </div>
           {track.artist ? (
             <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="full-artist" onClick={closeFull}>
               {track.artist}
