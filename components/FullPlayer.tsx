@@ -10,6 +10,7 @@ import {
   ListMusic,
   ListPlus,
   Loader2,
+  MessageSquare,
   Moon,
   Pause,
   Pencil,
@@ -89,7 +90,7 @@ function FullBody({ track }: { track: Track }) {
   const { queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
   const { time, duration } = useProgress();
-  const { closeFull, sleepEnd, setSleep, openPicker } = useExtras();
+  const { closeFull, sleepEnd, setSleep, openPicker, openComments } = useExtras();
 
   const [view, setView] = useState<View>('art');
   const [lyrics, setLyrics] = useState<Lyrics | null>(null);
@@ -408,6 +409,10 @@ function FullBody({ track }: { track: Track }) {
         <button type="button" className={`btab${view === 'lyrics' ? ' active' : ''}`} onClick={() => toggleView('lyrics')}>
           <Pencil />
           Lyrics
+        </button>
+        <button type="button" className="btab" onClick={openComments}>
+          <MessageSquare />
+          Komentar
         </button>
         <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="btab" onClick={closeFull}>
           <User />
