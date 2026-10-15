@@ -52,9 +52,9 @@ function Av({ name, photo, small }: { name: string; photo?: string | null; small
 }
 
 export default function CommentsSheet() {
-  const { commentsOpen, closeComments } = useExtras();
+  const { commentsOpen, closeComments, closeFull } = useExtras();
   const { current } = usePlayer();
-  const { user, handle } = useAuth();
+  const { user, handle, photo, displayName } = useAuth();
 
   const [items, setItems] = useState<CommentDoc[]>([]);
   const [state, setState] = useState<'loading' | 'ok' | 'error' | 'denied'>('loading');
@@ -68,7 +68,7 @@ export default function CommentsSheet() {
   const [toast, setToast] = useState('');
 
   const tid = current ? current.id.replace(/[^a-zA-Z0-9_-]/g, '_') : '';
-  const myName = user ? user.displayName || user.email?.split('@')[0] || handle || 'User' : '';
+  const myName = user ? displayName || handle || 'User' : '';
 
   useEffect(() => {
     try {
@@ -143,7 +143,7 @@ export default function CommentsSheet() {
       await addDoc(collection(db, 'track_comments', tid, 'comments'), {
         uid: user.uid,
         user: myName,
-        photoURL: user.photoURL || null,
+        photoURL: photo || null,
         text: t,
         likes: 0,
         replyCount: 0,
@@ -219,7 +219,7 @@ export default function CommentsSheet() {
       await addDoc(collection(db, 'track_comments', tid, 'comments', id, 'replies'), {
         uid: user.uid,
         user: myName,
-        photoURL: user.photoURL || null,
+        photoURL: photo || null,
         text: t,
         ts: serverTimestamp()
       });
@@ -274,10 +274,14 @@ export default function CommentsSheet() {
                 const rc = c.replyCount || 0;
                 return (
                   <div key={c.id} className="cm-item">
-                    <Av name={c.user} photo={c.photoURL} />
+                    <Link href={`/u?uid=${c.uid}`} onClick={() => { closeComments(); closeFull(); }}>
+                      <Av name={c.user} photo={c.photoURL} />
+                    </Link>
                     <div className="cm-body">
                       <div className="cm-meta">
-                        <span className="cm-name">{c.user}</span>
+                        <Link href={`/u?uid=${c.uid}`} className="cm-name" onClick={() => { closeComments(); closeFull(); }}>
+                          {c.user}
+                        </Link>
                         {c.role ? <span className="cm-badge">{c.role}</span> : null}
                         {c.level ? <span className="cm-badge">Lv.{c.level}</span> : null}
                         <span>{timeAgo(c.ms)}</span>
@@ -361,7 +365,7 @@ export default function CommentsSheet() {
         <div className="cm-input">
           {user ? (
             <>
-              <Av name={myName} photo={user.photoURL} small />
+              <Av name={myName} photo={photo} small />
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
