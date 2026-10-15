@@ -31,6 +31,7 @@ import {
   type CloudArtist
 } from '@/lib/cloud';
 import { fbApp } from '@/lib/firebase';
+import type { Profile } from '@/lib/profile';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
 
@@ -40,6 +41,9 @@ type AuthCtx = {
   synced: boolean;
   handle: string;
   photo: string | null;
+  displayName: string;
+  profile: Profile | null;
+  refreshProfile: () => Promise<void>;
   loginGoogle: () => Promise<string | null>;
   loginEmail: (email: string, pass: string) => Promise<string | null>;
   registerEmail: (name: string, email: string, pass: string) => Promise<string | null>;
@@ -98,6 +102,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [synced, setSynced] = useState(false);
   const [rev, setRev] = useState(0);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const confirmRef = useRef<ConfirmationResult | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
@@ -146,6 +151,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           if (Object.keys(patch).length) await setDoc(pref, patch, { merge: true });
         }
 
+        try {
+          const fresh = await getDoc(pref);
+          if (!cancelled) setProfile((fresh.data() as Profile | undefined) ?? null);
+        } catch {}
+
         const snap = await getDoc(doc(db, 'users', uid));
         const d = snap.exists() ? snap.data() : {};
         if (cancelled) return;
@@ -185,6 +195,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }, 1500);
     return () => clearTimeout(id);
   }, [uid, synced, liked, recent, playlists, artists]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!uid) return;
+    try {
+      const snap = await getDoc(doc(getFirestore(fbApp()), 'user_profiles', uid));
+      setProfile((snap.data() as Profile | undefined) ?? null);
+    } catch {}
+  }, [uid]);
 
   const loginGoogle = useCallback(async () => {
     const auth = getAuth(fbApp());
@@ -270,6 +288,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await signOut(getAuth(fbApp()));
     setSynced(false);
+    setProfile(null);
     metaRef.current = {};
     setLikedAll([]);
     setRecentAll([]);
@@ -278,9 +297,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [setLikedAll, setRecentAll, setPlaylistsAll, setArtistsAll]);
 
   const handle = useMemo(() => {
-    const base = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || 'tamu';
+    const base = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || 'tamu';
     return base.toLowerCase().replace(/\s+/g, '') || 'tamu';
-  }, [user, rev]);
+  }, [user, rev, profile]);
 
   const value = useMemo<AuthCtx>(
     () => ({
@@ -288,7 +307,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       synced,
       handle,
-      photo: user?.photoURL ?? null,
+      photo: profile?.photoURL ?? user?.photoURL ?? null,
+      displayName: profile?.displayName || user?.displayName || user?.email?.split('@')[0] || '',
+      profile,
+      refreshProfile,
       loginGoogle,
       loginEmail,
       registerEmail,
@@ -297,7 +319,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       confirmPhoneCode,
       logout
     }),
-    [user, ready, synced, handle, loginGoogle, loginEmail, registerEmail, resetPassword, sendPhoneCode, confirmPhoneCode, logout, rev]
+    [user, ready, synced, handle, profile, refreshProfile, loginGoogle, loginEmail, registerEmail, resetPassword, sendPhoneCode, confirmPhoneCode, logout, rev]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
