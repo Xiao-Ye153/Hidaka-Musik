@@ -25,6 +25,7 @@ import { roleFor, timeAgo } from '@/lib/roles';
 import { useAuth } from './AuthProvider';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
+import { useProgress2 } from './ProgressProvider';
 
 type CommentDoc = {
   id: string;
@@ -55,6 +56,7 @@ export default function CommentsSheet() {
   const { commentsOpen, closeComments, closeFull } = useExtras();
   const { current } = usePlayer();
   const { user, handle, photo, displayName } = useAuth();
+  const { level } = useProgress2();
 
   const [items, setItems] = useState<CommentDoc[]>([]);
   const [state, setState] = useState<'loading' | 'ok' | 'error' | 'denied'>('loading');
@@ -147,6 +149,7 @@ export default function CommentsSheet() {
         text: t,
         likes: 0,
         replyCount: 0,
+        level: level.level,
         role,
         bannerThemeId: banner,
         ts: serverTimestamp()
