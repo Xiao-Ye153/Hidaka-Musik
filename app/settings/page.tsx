@@ -8,6 +8,7 @@ import { THEMES } from '@/lib/themes';
 import { useAuth } from '@/components/AuthProvider';
 import IconAvatar from '@/components/IconAvatar';
 import { useExtras } from '@/components/Extras';
+import { useProgress2 } from '@/components/ProgressProvider';
 import { usePlayer, useTheme } from '@/components/Providers';
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const { user, handle, photo, logout } = useAuth();
   const { liked, recent } = usePlayer();
   const { playlists, artists } = useExtras();
+  const { active, level } = useProgress2();
   const { theme, openSheet } = useTheme();
   const [notif, setNotif] = useState<NotificationPermission | 'unsupported'>('default');
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null);
@@ -125,6 +127,18 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {user && active ? (
+        <section className="panel glass-soft">
+          <div className="panel-title">Level {level.level}</div>
+          <div className="ms-bar">
+            <i style={{ width: `${Math.min(100, (level.into / level.need) * 100)}%` }} />
+          </div>
+          <p className="ms-desc">
+            {Math.floor(level.into)} / {level.need} poin · +5 poin tiap 10 menit mendengarkan
+          </p>
+        </section>
+      ) : null}
 
       <button type="button" className="list-row glass-soft" onClick={askNotif}>
         <span className="ico">
