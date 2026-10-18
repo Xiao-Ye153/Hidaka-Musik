@@ -20,13 +20,16 @@ import {
   SkipForward,
   User
 } from 'lucide-react';
+import { cleanArtistName, hiRes } from '@/lib/api';
+import { getArtistBio } from '@/lib/bio';
 import { fetchLyrics, type Lyrics } from '@/lib/lyrics';
 import type { Track } from '@/lib/tracks';
+import { useAuth } from './AuthProvider';
 import { useExtras } from './Extras';
 import { usePlayer, useProgress } from './Providers';
 import TrackThumb from './TrackThumb';
 
-type View = 'art' | 'lyrics' | 'queue';
+type View = 'art' | 'lyrics' | 'queue' | 'artist';
 
 const lyricCache = new Map<string, Lyrics | null>();
 
@@ -91,6 +94,7 @@ function FullBody({ track }: { track: Track }) {
     usePlayer();
   const { time, duration } = useProgress();
   const { closeFull, sleepEnd, setSleep, openPicker, openComments } = useExtras();
+  const { user } = useAuth();
 
   const [view, setView] = useState<View>('art');
   const [lyrics, setLyrics] = useState<Lyrics | null>(null);
@@ -100,6 +104,10 @@ function FullBody({ track }: { track: Track }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const userTs = useRef(0);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [bio, setBio] = useState('');
+  const [bioState, setBioState] = useState<'idle' | 'loading' | 'ok' | 'none'>('idle');
+  const [bioOpen, setBioOpen] = useState(false);
   const firstScroll = useRef(true);
 
   useEffect(() => {
@@ -202,6 +210,31 @@ function FullBody({ track }: { track: Track }) {
   }, [active, view, lyState, lines.length]);
 
   useEffect(() => {
+    if (view !== 'artist' || !track.artist) return;
+    let off = false;
+    setBioState('loading');
+    setBio('');
+    setBioOpen(false);
+    getArtistBio(cleanArtistName(track.artist) || track.artist, user?.uid ?? null)
+      .then((b) => {
+        if (off) return;
+        setBio(b);
+        setBioState(b ? 'ok' : 'none');
+      })
+      .catch(() => !off && setBioState('none'));
+    return () => {
+      off = true;
+    };
+  }, [view, track.artist, user?.uid]);
+
+  useEffect(() => {
+    if (view === 'queue' || view === 'artist') {
+      const id = setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      return () => clearTimeout(id);
+    }
+  }, [view]);
+
+  useEffect(() => {
     if (!note) return;
     const id = setTimeout(() => setNote(''), 2600);
     return () => clearTimeout(id);
@@ -251,45 +284,6 @@ function FullBody({ track }: { track: Track }) {
       </div>
 
       <div className="full-stage">
-        {view === 'queue' ? (
-          <div className="un-wrap">
-            <div className="un-head">Up Next</div>
-            <div className="un-list">
-              {queue.length === 0 && <div className="ly-empty">Belum ada antrian</div>}
-              {queue.map((t, i) => {
-                const now = t.id === track.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={`un-item${now ? ' playing' : ''}`}
-                    onClick={() => {
-                      play(t, queue);
-                      setView('art');
-                    }}
-                  >
-                    <div className="un-num">
-                      {now ? (
-                        <div className="eq">
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      ) : (
-                        i + 1
-                      )}
-                    </div>
-                    <TrackThumb track={t} className="un-thumb" />
-                    <div className="un-info">
-                      <div className="un-t">{t.title}</div>
-                      <div className="un-ch">{t.artist}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
           <div className={`swap${view === 'lyrics' ? ' show-lyrics' : ''}`}>
             <TrackThumb track={track} className="full-art" hires />
             <div className="swap-lyrics">
@@ -325,7 +319,6 @@ function FullBody({ track }: { track: Track }) {
               </div>
             </div>
           </div>
-        )}
       </div>
 
       <div className="full-info">
@@ -401,6 +394,69 @@ function FullBody({ track }: { track: Track }) {
         </p>
       ) : null}
 
+      {view === 'queue' && (
+        <div ref={panelRef} className="un-wrap">
+          <div className="un-head">Up Next</div>
+          <div className="un-list">
+            {queue.length === 0 && <div className="un-empty">Belum ada antrian</div>}
+            {queue.map((t, i) => {
+              const now = t.id === track.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`un-item${now ? ' playing' : ''}`}
+                  onClick={() => {
+                    play(t, queue);
+                    setView('art');
+                  }}
+                >
+                  <div className="un-num">
+                    {now ? (
+                      <div className="eq">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <TrackThumb track={t} className="un-thumb" />
+                  <div className="un-info">
+                    <div className="un-t">{t.title}</div>
+                    <div className="un-ch">{t.artist}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {view === 'artist' && (
+        <div ref={panelRef} className="ab-wrap">
+          <div className="ab-banner">
+            {track.thumb ? <img src={hiRes(track.thumb)} alt="" /> : null}
+            <div className="ab-name">{track.artist}</div>
+          </div>
+          <div className="ab-label">Tentang artis</div>
+          {bioState === 'loading' && <div className="ab-text">Memuat info artis...</div>}
+          {bioState === 'none' && <div className="ab-text">Info artis tidak tersedia.</div>}
+          {bioState === 'ok' && (
+            <>
+              <div className={`ab-text${bioOpen ? '' : ' clamp'}`}>{bio}</div>
+              <button type="button" className="ab-more" onClick={() => setBioOpen((o) => !o)}>
+                {bioOpen ? 'Lebih sedikit' : 'Selengkapnya'}
+              </button>
+            </>
+          )}
+          <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="ab-go" onClick={closeFull}>
+            Buka halaman artis
+          </Link>
+        </div>
+      )}
+
       <div className="full-tabs">
         <button type="button" className={`btab${view === 'queue' ? ' active' : ''}`} onClick={() => toggleView('queue')}>
           <ListMusic />
@@ -414,10 +470,10 @@ function FullBody({ track }: { track: Track }) {
           <MessageSquare />
           Komentar
         </button>
-        <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="btab" onClick={closeFull}>
+        <button type="button" className={`btab${view === 'artist' ? ' active' : ''}`} onClick={() => toggleView('artist')}>
           <User />
           Lihat artis
-        </Link>
+        </button>
       </div>
     </div>
   );
