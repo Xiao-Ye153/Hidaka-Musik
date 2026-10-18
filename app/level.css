@@ -1,0 +1,39 @@
+.ms-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 120px;
+  z-index: 300;
+  transform: translateX(-50%);
+  max-width: 88vw;
+  padding: 11px 18px;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  animation: panelIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.ms-bar {
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+}
+
+.ms-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.ms-desc {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
