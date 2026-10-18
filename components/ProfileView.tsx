@@ -27,6 +27,7 @@ import {
 import { fbApp } from '@/lib/firebase';
 import { resizeImage, type FavSong, type Profile, type ShownPl } from '@/lib/profile';
 import { roleFor, timeAgo } from '@/lib/roles';
+import { computeLevelInfo } from '@/lib/level';
 import { useAuth } from './AuthProvider';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
@@ -313,6 +314,7 @@ export default function ProfileView({ uid }: { uid: string }) {
 
         <h1 className="profile-name">{nm}</h1>
         <div className="pf-badges">
+          <span className="pf-badge">Lv.{computeLevelInfo(data.levelPoints || 0).level}</span>
           <span className="pf-badge">{data.roleOverride || roleFor(cc)}</span>
         </div>
         <p className="profile-bio">{data.bio?.trim() ? data.bio : own ? 'Belum ada bio. Ketuk Edit profil untuk menambahkannya.' : 'Belum ada bio.'}</p>
