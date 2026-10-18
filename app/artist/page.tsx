@@ -9,6 +9,8 @@ import { usePlayer } from '@/components/Providers';
 import { LazyRow, Spin } from '@/components/Rows';
 import TrackRow from '@/components/TrackRow';
 import { cleanArtistName, hiRes, searchTracks } from '@/lib/api';
+import { getArtistBio } from '@/lib/bio';
+import { useAuth } from '@/components/AuthProvider';
 import type { Track } from '@/lib/tracks';
 
 function ArtistView() {
@@ -17,6 +19,7 @@ function ArtistView() {
   const name = (params.get('name') || '').trim();
   const clean = cleanArtistName(name) || name;
   const { play } = usePlayer();
+  const { user } = useAuth();
   const { isFollowing, toggleArtist } = useExtras();
   const [songs, setSongs] = useState<Track[]>([]);
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -41,15 +44,14 @@ function ArtistView() {
     })();
     setBio('');
     setBioLoading(true);
-    fetch(`/api/artist-bio?name=${encodeURIComponent(clean)}&lang=id`, { signal: ctl.signal })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.bio) setBio(String(d.bio));
+    getArtistBio(clean, user?.uid ?? null)
+      .then((b) => {
+        if (b) setBio(b);
       })
       .catch(() => {})
       .finally(() => setBioLoading(false));
     return () => ctl.abort();
-  }, [name, clean]);
+  }, [name, clean, user?.uid]);
 
   if (!name) return <p className="greeting-sub">Nama artis tidak ada.</p>;
 
