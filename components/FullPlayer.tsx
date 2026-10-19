@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ChevronDown,
+  ChevronRight,
   Download,
   Heart,
   ListMusic,
@@ -20,7 +21,7 @@ import {
   SkipForward,
   User
 } from 'lucide-react';
-import { cleanArtistName, hiRes } from '@/lib/api';
+import { cleanArtistName, hiRes, searchTracks } from '@/lib/api';
 import { getArtistBio } from '@/lib/bio';
 import { fetchLyrics, type Lyrics } from '@/lib/lyrics';
 import type { Track } from '@/lib/tracks';
@@ -29,7 +30,7 @@ import { useExtras } from './Extras';
 import { usePlayer, useProgress } from './Providers';
 import TrackThumb from './TrackThumb';
 
-type View = 'art' | 'lyrics' | 'queue' | 'artist';
+type View = 'art' | 'lyrics' | 'queue';
 
 const lyricCache = new Map<string, Lyrics | null>();
 
@@ -93,7 +94,7 @@ function FullBody({ track }: { track: Track }) {
   const { queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
   const { time, duration } = useProgress();
-  const { closeFull, sleepEnd, setSleep, openPicker, openComments } = useExtras();
+  const { closeFull, sleepEnd, setSleep, openPicker, openComments, isFollowing, toggleArtist } = useExtras();
   const { user } = useAuth();
 
   const [view, setView] = useState<View>('art');
@@ -108,6 +109,7 @@ function FullBody({ track }: { track: Track }) {
   const [bio, setBio] = useState('');
   const [bioState, setBioState] = useState<'idle' | 'loading' | 'ok' | 'none'>('idle');
   const [bioOpen, setBioOpen] = useState(false);
+  const [explore, setExplore] = useState<Track[]>([]);
   const firstScroll = useRef(true);
 
   useEffect(() => {
@@ -210,25 +212,30 @@ function FullBody({ track }: { track: Track }) {
   }, [active, view, lyState, lines.length]);
 
   useEffect(() => {
-    if (view !== 'artist' || !track.artist) return;
+    if (!track.artist) return;
     let off = false;
+    const clean = cleanArtistName(track.artist) || track.artist;
     setBioState('loading');
     setBio('');
     setBioOpen(false);
-    getArtistBio(cleanArtistName(track.artist) || track.artist, user?.uid ?? null)
+    setExplore([]);
+    getArtistBio(clean, user?.uid ?? null)
       .then((b) => {
         if (off) return;
         setBio(b);
         setBioState(b ? 'ok' : 'none');
       })
       .catch(() => !off && setBioState('none'));
+    searchTracks(`${clean} official music`, 8)
+      .then((r) => !off && setExplore(r))
+      .catch(() => {});
     return () => {
       off = true;
     };
-  }, [view, track.artist, user?.uid]);
+  }, [track.artist, user?.uid]);
 
   useEffect(() => {
-    if (view === 'queue' || view === 'artist') {
+    if (view === 'queue') {
       const id = setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
       return () => clearTimeout(id);
     }
@@ -283,6 +290,7 @@ function FullBody({ track }: { track: Track }) {
         </button>
       </div>
 
+      <div className="full-scroll">
       <div className="full-stage">
           <div className={`swap${view === 'lyrics' ? ' show-lyrics' : ''}`}>
             <TrackThumb track={track} className="full-art" hires />
@@ -394,6 +402,59 @@ function FullBody({ track }: { track: Track }) {
         </p>
       ) : null}
 
+      {view === 'art' && (
+        <div className="ta-wrap">
+          <div className="ta-line" />
+          <div className="ta-label">Tentang Artis</div>
+          <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="ta-banner" onClick={closeFull}>
+            {track.thumb ? <img src={hiRes(track.thumb)} alt="" /> : null}
+            <span className="ov" />
+            <span className="nm">{track.artist}</span>
+            <span className="go">
+              <ChevronRight size={16} />
+            </span>
+          </Link>
+          <div className="ta-bio">
+            {bioState === 'loading' && (
+              <div className="t" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="spin" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Memuat info artis...</span>
+              </div>
+            )}
+            {bioState === 'none' && <div className="t">Info artis tidak tersedia.</div>}
+            {bioState === 'ok' && (
+              <>
+                <div className={`t${bioOpen ? '' : ' clamp'}`}>{bio}</div>
+                <button type="button" className="ta-more" onClick={() => setBioOpen((o) => !o)}>
+                  {bioOpen ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'}
+                </button>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            className={`ta-sub${isFollowing(track.artist) ? ' on' : ''}`}
+            onClick={() => toggleArtist(track.artist)}
+          >
+            {isFollowing(track.artist) ? '✓ Subscribed' : 'Subscribe'}
+          </button>
+          {explore.length > 0 && (
+            <>
+              <div className="ta-ex-title">Jelajahi {cleanArtistName(track.artist) || track.artist}</div>
+              <div className="ta-ex">
+                {explore.map((t) => (
+                  <button key={t.id} type="button" className="ta-card" onClick={() => play(t, explore)}>
+                    <TrackThumb track={t} className="im" />
+                    <div className="tt">{t.title}</div>
+                    <div className="ch">{t.artist}</div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {view === 'queue' && (
         <div ref={panelRef} className="un-wrap">
           <div className="un-head">Up Next</div>
@@ -434,28 +495,7 @@ function FullBody({ track }: { track: Track }) {
         </div>
       )}
 
-      {view === 'artist' && (
-        <div ref={panelRef} className="ab-wrap">
-          <div className="ab-banner">
-            {track.thumb ? <img src={hiRes(track.thumb)} alt="" /> : null}
-            <div className="ab-name">{track.artist}</div>
-          </div>
-          <div className="ab-label">Tentang artis</div>
-          {bioState === 'loading' && <div className="ab-text">Memuat info artis...</div>}
-          {bioState === 'none' && <div className="ab-text">Info artis tidak tersedia.</div>}
-          {bioState === 'ok' && (
-            <>
-              <div className={`ab-text${bioOpen ? '' : ' clamp'}`}>{bio}</div>
-              <button type="button" className="ab-more" onClick={() => setBioOpen((o) => !o)}>
-                {bioOpen ? 'Lebih sedikit' : 'Selengkapnya'}
-              </button>
-            </>
-          )}
-          <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="ab-go" onClick={closeFull}>
-            Buka halaman artis
-          </Link>
-        </div>
-      )}
+      </div>
 
       <div className="full-tabs">
         <button type="button" className={`btab${view === 'queue' ? ' active' : ''}`} onClick={() => toggleView('queue')}>
@@ -470,10 +510,10 @@ function FullBody({ track }: { track: Track }) {
           <MessageSquare />
           Komentar
         </button>
-        <button type="button" className={`btab${view === 'artist' ? ' active' : ''}`} onClick={() => toggleView('artist')}>
+        <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="btab" onClick={closeFull}>
           <User />
           Lihat artis
-        </button>
+        </Link>
       </div>
     </div>
   );
