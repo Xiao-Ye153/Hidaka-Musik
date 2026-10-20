@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { APP } from '@/lib/config';
+import { useI18n } from '@/components/I18nProvider';
 
 type Mode = 'login' | 'signup';
 type Panel = 'form' | 'phone-input' | 'phone-otp';
@@ -19,6 +20,7 @@ function normalizePhone(raw: string): string {
 }
 
 export default function LoginPage() {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const { user, ready, loginGoogle, loginEmail, registerEmail, resetPassword, sendPhoneCode, confirmPhoneCode } = useAuth();
 
@@ -54,14 +56,14 @@ export default function LoginPage() {
 
   function handleForgot() {
     if (!email.trim()) {
-      setError('Isi email dulu, lalu ketuk Lupa password.');
+      setError(tr("Isi email dulu, lalu ketuk Lupa password."));
       return;
     }
     run(
       () => resetPassword(email),
       () => {
         setOk(true);
-        setError('Link reset password sudah dikirim ke email kamu.');
+        setError(tr("Link reset password sudah dikirim ke email kamu."));
       }
     );
   }
@@ -120,7 +122,7 @@ export default function LoginPage() {
                   setError(null);
                 }}
               >
-                MASUK
+                {tr("MASUK")}
               </button>
               <button
                 type="button"
@@ -130,14 +132,14 @@ export default function LoginPage() {
                   setError(null);
                 }}
               >
-                DAFTAR
+                {tr("DAFTAR")}
               </button>
             </div>
 
             <form onSubmit={handleEmailSubmit}>
               {mode === 'signup' && (
                 <label className="lg-field">
-                  <input className="lg-in" placeholder="Nama Lengkap" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                  <input className="lg-in" placeholder={tr("Nama Lengkap")} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
                 </label>
               )}
 
@@ -146,7 +148,7 @@ export default function LoginPage() {
                   type="email"
                   required
                   className="lg-in"
-                  placeholder="Email"
+                  placeholder={tr("Email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -159,7 +161,7 @@ export default function LoginPage() {
                   required
                   minLength={6}
                   className="lg-in"
-                  placeholder="Password"
+                  placeholder={tr("Password")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
@@ -169,7 +171,7 @@ export default function LoginPage() {
               {mode === 'login' && (
                 <div className="lg-forgot">
                   <button type="button" onClick={handleForgot}>
-                    Lupa password?
+                    {tr("Lupa password?")}
                   </button>
                 </div>
               )}
@@ -177,13 +179,13 @@ export default function LoginPage() {
               {error && <p className={`lg-err${ok ? ' ok' : ''}`}>{error}</p>}
 
               <button type="submit" disabled={loading} className="lg-btn blue">
-                {loading ? 'Memproses...' : mode === 'signup' ? 'Daftar Sekarang' : 'Masuk'}
+                {loading ? 'Memproses...' : mode === 'signup' ? 'Daftar Sekarang' : tr('Masuk')}
               </button>
             </form>
 
             <div className="lg-or">
               <i />
-              <span>atau</span>
+              <span>{tr("atau")}</span>
               <i />
             </div>
 
@@ -194,7 +196,7 @@ export default function LoginPage() {
                 <path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.6 35.4 27 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.6 39.6 16.2 44 24 44z" />
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.5 5.5C39.9 37 44 31 44 24c0-1.3-.1-2.3-.4-3.5z" />
               </svg>
-              Lanjutkan dengan Google
+              {tr("Lanjutkan dengan Google")}
             </button>
 
             <button
@@ -207,7 +209,7 @@ export default function LoginPage() {
               className="lg-btn mint"
             >
               <Phone size={18} />
-              Lanjutkan dengan Nomor HP
+              {tr("Lanjutkan dengan Nomor HP")}
             </button>
           </>
         )}
@@ -215,22 +217,22 @@ export default function LoginPage() {
         {panel === 'phone-input' && (
           <div>
             <div className="lg-head">
-              <button type="button" onClick={backToForm} className="lg-bk" aria-label="Kembali">
+              <button type="button" onClick={backToForm} className="lg-bk" aria-label={tr("Kembali")}>
                 <ArrowLeft size={15} />
               </button>
-              <h1 className="lg-h1">Masukin Nomor HP</h1>
+              <h1 className="lg-h1">{tr("Masukin Nomor HP")}</h1>
             </div>
-            <p className="lg-sub">Kami bakal kirim kode OTP lewat SMS ke nomor ini.</p>
+            <p className="lg-sub">{tr("Kami bakal kirim kode OTP lewat SMS ke nomor ini.")}</p>
 
             <form onSubmit={handleSendOtp}>
               <label className="lg-field">
-                <input type="tel" required className="lg-in" placeholder="08xxxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
+                <input type="tel" required className="lg-in" placeholder={tr("08xxxxxxxxxx")} value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
               </label>
 
               {error && <p className="lg-err">{error}</p>}
 
               <button type="submit" disabled={loading} className="lg-btn blue">
-                {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
+                {loading ? 'Mengirim...' : tr('Kirim Kode OTP')}
                 {!loading && <ArrowRight size={16} />}
               </button>
             </form>
@@ -240,12 +242,12 @@ export default function LoginPage() {
         {panel === 'phone-otp' && (
           <div>
             <div className="lg-head">
-              <button type="button" onClick={() => setPanel('phone-input')} className="lg-bk" aria-label="Kembali">
+              <button type="button" onClick={() => setPanel('phone-input')} className="lg-bk" aria-label={tr("Kembali")}>
                 <ArrowLeft size={15} />
               </button>
-              <h1 className="lg-h1">Masukin Kode OTP</h1>
+              <h1 className="lg-h1">{tr("Masukin Kode OTP")}</h1>
             </div>
-            <p className="lg-sub">Kode udah dikirim ke {normalizePhone(phone)}</p>
+            <p className="lg-sub">{tr('Kode udah dikirim ke {p}', { p: normalizePhone(phone) })}</p>
 
             <form onSubmit={handleVerifyOtp}>
               <label className="lg-field">
@@ -263,7 +265,7 @@ export default function LoginPage() {
               {error && <p className="lg-err">{error}</p>}
 
               <button type="submit" disabled={loading} className="lg-btn blue">
-                {loading ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
+                {loading ? 'Memverifikasi...' : tr('Verifikasi & Masuk')}
               </button>
             </form>
           </div>
@@ -273,16 +275,16 @@ export default function LoginPage() {
           <p className="lg-foot">
             {mode === 'login' ? (
               <>
-                Belum punya akun?{' '}
+                {tr('Belum punya akun?')}{' '}
                 <button type="button" onClick={() => setMode('signup')}>
-                  Daftar
+                  {tr("Daftar")}
                 </button>
               </>
             ) : (
               <>
-                Udah punya akun?{' '}
+                {tr('Udah punya akun?')}{' '}
                 <button type="button" onClick={() => setMode('login')}>
-                  Masuk
+                  {tr("Masuk")}
                 </button>
               </>
             )}
