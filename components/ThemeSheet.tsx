@@ -3,8 +3,10 @@
 import { useEffect } from 'react';
 import { THEMES } from '@/lib/themes';
 import { useTheme } from './Providers';
+import { useI18n } from '@/components/I18nProvider';
 
 export default function ThemeSheet() {
+  const { t: tr } = useI18n();
   const { theme, setTheme, sheetOpen, closeSheet } = useTheme();
 
   useEffect(() => {
@@ -23,12 +25,12 @@ export default function ThemeSheet() {
         className={`sheet glass${sheetOpen ? ' open' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Pilih tema"
+        aria-label={tr("Pilih tema")}
         aria-hidden={!sheetOpen}
       >
         <div className="sheet-grip" />
-        <h3>Pilih Tema</h3>
-        <p>Tampilan berubah secara instan ke seluruh aplikasi</p>
+        <h3>{tr("Pilih Tema")}</h3>
+        <p>{tr("Tampilan berubah secara instan ke seluruh aplikasi")}</p>
         <div className="theme-grid">
           {THEMES.map((t) => (
             <button
@@ -42,7 +44,7 @@ export default function ThemeSheet() {
                 style={{ background: `linear-gradient(135deg, ${t.base} 50%, ${t.accent} 50%)` }}
               />
               <span className="theme-name">{t.label}</span>
-              <span className="theme-desc">{t.desc}</span>
+              <span className="theme-desc">{tr(t.desc)}</span>
             </button>
           ))}
         </div>
