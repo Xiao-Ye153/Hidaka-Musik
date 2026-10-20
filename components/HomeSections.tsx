@@ -7,8 +7,10 @@ import { COMMUNITY, HOME_SECTIONS, type Track } from '@/lib/tracks';
 import { usePlayer } from './Providers';
 import { ArtistRow, CommunityRow, HRow, LazyRow } from './Rows';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 export function Featured({ tracks }: { tracks: Track[] }) {
+  const { t: tr } = useI18n();
   const { current, playing, play, toggle } = usePlayer();
   const slides = tracks.slice(0, 5);
   if (slides.length === 0) return null;
@@ -29,7 +31,7 @@ export function Featured({ tracks }: { tracks: Track[] }) {
               <div className="fslide-bg" style={{ backgroundImage: t.thumb ? `url(${hiRes(t.thumb)})` : undefined }} />
               <div className="fslide-ov" />
               <div className="fslide-body">
-                <div className="fslide-label">🔥 Trending Sekarang</div>
+                <div className="fslide-label">{tr("🔥 Trending Sekarang")}</div>
                 <div className="fslide-title">{t.title}</div>
                 <div className="fslide-sub">{t.artist}</div>
               </div>
@@ -45,12 +47,13 @@ export function Featured({ tracks }: { tracks: Track[] }) {
 }
 
 export function SpeedDial({ tracks }: { tracks: Track[] }) {
+  const { t: tr } = useI18n();
   const { play } = usePlayer();
   if (tracks.length === 0) return null;
   return (
     <section className="hs">
       <div className="hs-head">
-        <h2 className="hs-title">Speed dial</h2>
+        <h2 className="hs-title">{tr("Speed dial")}</h2>
       </div>
       <div className="speed">
         {tracks.slice(0, 9).map((t) => (
@@ -65,6 +68,7 @@ export function SpeedDial({ tracks }: { tracks: Track[] }) {
 }
 
 export function MoreSections({ tracks }: { tracks: Track[] }) {
+  const { t: tr } = useI18n();
   const artists: string[] = [];
   for (const t of tracks) {
     if (t.artist && !artists.includes(t.artist)) artists.push(t.artist);
@@ -78,7 +82,7 @@ export function MoreSections({ tracks }: { tracks: Track[] }) {
       {tracks.length > 0 && (
         <section className="hs">
           <div className="hs-head">
-            <h2 className="hs-title">Tetap mendengarkan</h2>
+            <h2 className="hs-title">{tr("Tetap mendengarkan")}</h2>
           </div>
           <ArtistRow tracks={tracks} />
         </section>
@@ -87,7 +91,7 @@ export function MoreSections({ tracks }: { tracks: Track[] }) {
       {trending.length > 0 && (
         <section className="hs">
           <div className="hs-head">
-            <h2 className="hs-title">Trending Now</h2>
+            <h2 className="hs-title">{tr("Trending Now")}</h2>
           </div>
           <HRow tracks={trending} />
         </section>
@@ -96,7 +100,7 @@ export function MoreSections({ tracks }: { tracks: Track[] }) {
       {fresh.length > 0 && (
         <section className="hs">
           <div className="hs-head">
-            <h2 className="hs-title">New Releases</h2>
+            <h2 className="hs-title">{tr("New Releases")}</h2>
           </div>
           <HRow tracks={fresh} />
         </section>
@@ -109,7 +113,7 @@ export function MoreSections({ tracks }: { tracks: Track[] }) {
       <CommunityRow items={COMMUNITY} />
 
       {artists.map((a) => (
-        <LazyRow key={a} title={`Serupa dengan ${a}`} q={`${cleanArtistName(a) || a} similar artists mix`} max={6} />
+        <LazyRow key={a} title={tr('Serupa dengan {a}', { a })} q={`${cleanArtistName(a) || a} similar artists mix`} max={6} />
       ))}
     </>
   );
