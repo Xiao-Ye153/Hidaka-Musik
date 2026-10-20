@@ -10,7 +10,8 @@ const LANGS: Record<string, string> = {
   ms: 'Bahasa Melayu',
   ja: '日本語',
   ko: '한국어',
-  es: 'Español'
+  es: 'Español',
+  ru: 'Русский'
 };
 
 export async function GET(req: Request) {
