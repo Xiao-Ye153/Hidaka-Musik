@@ -8,6 +8,7 @@ import { useExtras } from '@/components/Extras';
 import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
 import { usePlayer } from '@/components/Providers';
+import { useI18n } from '@/components/I18nProvider';
 
 const TABS = [
   { id: 'liked', label: 'Disukai', Icon: Heart },
@@ -24,6 +25,7 @@ function parseListId(input: string) {
 }
 
 export default function LibraryPage() {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const { liked } = usePlayer();
   const { playlists, artists, createPlaylist } = useExtras();
@@ -43,7 +45,7 @@ export default function LibraryPage() {
   const importList = async () => {
     const id = parseListId(link);
     if (!id) {
-      setMsg('Link playlist tidak dikenali.');
+      setMsg(tr("Link playlist tidak dikenali."));
       return;
     }
     setBusy(true);
@@ -58,20 +60,20 @@ export default function LibraryPage() {
         artist: t.channel || '',
         thumb: t.thumb
       }));
-      const pid = createPlaylist(d.title || 'Playlist YouTube Music', tracks);
+      const pid = createPlaylist(d.title || tr('Playlist YouTube Music'), tracks);
       setLink('');
       router.push(`/playlist?id=${pid}`);
     } catch {
-      setMsg('Playlist tidak bisa diimpor. Pastikan linknya publik.');
+      setMsg(tr("Playlist tidak bisa diimpor. Pastikan linknya publik."));
     }
     setBusy(false);
   };
 
   return (
     <>
-      <h1 className="page-title">Library</h1>
+      <h1 className="page-title">{tr("Library")}</h1>
       <p className="page-sub">
-        {liked.length} lagu · {artists.length} artis · {playlists.length} playlist
+        {tr('{n} lagu', { n: liked.length })} · {tr('{n} artis', { n: artists.length })} · {tr('{n} playlist', { n: playlists.length })}
       </p>
 
       <div className="tabs glass-soft" role="tablist">
@@ -85,7 +87,7 @@ export default function LibraryPage() {
             onClick={() => setTab(id)}
           >
             <Icon size={18} fill={id === 'liked' && tab === id ? 'currentColor' : 'none'} />
-            {label}
+            {tr(label)}
           </button>
         ))}
       </div>
@@ -110,7 +112,7 @@ export default function LibraryPage() {
                   {a}
                 </span>
                 <span className="row-sub" style={{ display: 'block' }}>
-                  Artis
+                  {tr("Artis")}
                 </span>
               </span>
             </Link>
@@ -121,14 +123,14 @@ export default function LibraryPage() {
       {tab === 'playlist' && (
         <>
           <div className="pl-form" style={{ marginTop: 22 }}>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nama playlist baru" onKeyDown={(e) => e.key === 'Enter' && create()} />
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={tr("Nama playlist baru")} onKeyDown={(e) => e.key === 'Enter' && create()} />
             <button type="button" onClick={create}>
-              Buat
+              {tr("Buat")}
             </button>
           </div>
           <div className="pl-form">
-            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Tempel link playlist YouTube Music" />
-            <button type="button" onClick={importList} disabled={busy} aria-label="Impor">
+            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder={tr("Tempel link playlist YouTube Music")} />
+            <button type="button" onClick={importList} disabled={busy} aria-label={tr("Impor")}>
               <Download size={18} />
             </button>
           </div>
@@ -149,7 +151,7 @@ export default function LibraryPage() {
                     {p.name}
                   </span>
                   <span className="row-sub" style={{ display: 'block' }}>
-                    {p.tracks.length} lagu
+                    {tr('{n} lagu', { n: p.tracks.length })}
                   </span>
                 </span>
               </Link>
@@ -163,27 +165,27 @@ export default function LibraryPage() {
           <div className="empty-orb" />
           {tab === 'liked' && (
             <>
-              <h3>Belum Ada Lagu Disukai</h3>
+              <h3>{tr("Belum Ada Lagu Disukai")}</h3>
               <p>
-                Klik ikon <Heart size={18} /> pada Mini Player atau Full Player saat memutar lagu favoritmu.
+                {tr("Klik ikon")} <Heart size={18} /> {tr("pada Mini Player atau Full Player saat memutar lagu favoritmu.")}
               </p>
             </>
           )}
           {tab === 'artist' && (
             <>
-              <h3>Belum Ada Artis</h3>
-              <p>Buka halaman artis dari pemutar, lalu ikuti artis favoritmu.</p>
+              <h3>{tr("Belum Ada Artis")}</h3>
+              <p>{tr("Buka halaman artis dari pemutar, lalu ikuti artis favoritmu.")}</p>
             </>
           )}
           {tab === 'playlist' && (
             <>
-              <h3>Belum Ada Playlist</h3>
-              <p>Buat playlist di atas atau impor dari link YouTube Music.</p>
+              <h3>{tr("Belum Ada Playlist")}</h3>
+              <p>{tr("Buat playlist di atas atau impor dari link YouTube Music.")}</p>
             </>
           )}
           <Link href="/search" className="pill-btn">
             <Search size={20} />
-            Cari &amp; Temukan Lagu
+            {tr('Cari & Temukan Lagu')}
           </Link>
         </div>
       )}
