@@ -29,6 +29,7 @@ import { useAuth } from './AuthProvider';
 import { useExtras } from './Extras';
 import { usePlayer, useProgress } from './Providers';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 type View = 'art' | 'lyrics' | 'queue';
 
@@ -42,6 +43,7 @@ function fmt(s: number) {
 }
 
 export default function FullPlayer() {
+  const { t: tr } = useI18n();
   const { fullOpen } = useExtras();
   const { current } = usePlayer();
   const [shown, setShown] = useState(false);
@@ -56,7 +58,7 @@ export default function FullPlayer() {
   }, [fullOpen]);
 
   return (
-    <div className={`full${fullOpen && current ? ' open' : ''}`} role="dialog" aria-label="Pemutar">
+    <div className={`full${fullOpen && current ? ' open' : ''}`} role="dialog" aria-label={tr("Pemutar")}>
       {shown && current ? <FullBody track={current} /> : null}
     </div>
   );
@@ -91,6 +93,7 @@ function Marquee({ text }: { text: string }) {
 }
 
 function FullBody({ track }: { track: Track }) {
+  const { t: tr, lang } = useI18n();
   const { queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
   const { time, duration } = useProgress();
@@ -219,7 +222,7 @@ function FullBody({ track }: { track: Track }) {
     setBio('');
     setBioOpen(false);
     setExplore([]);
-    getArtistBio(clean, user?.uid ?? null)
+    getArtistBio(clean, user?.uid ?? null, lang)
       .then((b) => {
         if (off) return;
         setBio(b);
@@ -232,7 +235,7 @@ function FullBody({ track }: { track: Track }) {
     return () => {
       off = true;
     };
-  }, [track.artist, user?.uid]);
+  }, [track.artist, user?.uid, lang]);
 
   useEffect(() => {
     if (view === 'queue') {
@@ -255,9 +258,9 @@ function FullBody({ track }: { track: Track }) {
       const d = await r.json();
       if (!d?.url) throw new Error('kosong');
       window.open(d.url, '_blank', 'noopener');
-      setNote('Unduhan dibuka di tab baru');
+      setNote(tr("Unduhan dibuka di tab baru"));
     } catch {
-      setNote('Gagal mengambil link unduhan');
+      setNote(tr("Gagal mengambil link unduhan"));
     }
     setDlBusy(false);
   };
@@ -271,7 +274,7 @@ function FullBody({ track }: { track: Track }) {
     }
     const n = order[(order.indexOf(cur) + 1) % order.length];
     setSleep(n);
-    setNote(n ? `Timer tidur ${n} menit` : 'Timer tidur dimatikan');
+    setNote(n ? tr('Timer tidur {n} menit', { n }) : tr('Timer tidur dimatikan'));
   };
 
   const toggleView = (v: View) => setView((cur) => (cur === v ? 'art' : v));
@@ -281,11 +284,11 @@ function FullBody({ track }: { track: Track }) {
   return (
     <div className="full-inner">
       <div className="full-head">
-        <button type="button" className="full-ib" onClick={closeFull} aria-label="Tutup">
+        <button type="button" className="full-ib" onClick={closeFull} aria-label={tr("Tutup")}>
           <ChevronDown size={24} />
         </button>
-        <b>Sedang diputar</b>
-        <button type="button" className="full-ib" onClick={() => openPicker(track)} aria-label="Simpan ke playlist">
+        <b>{tr("Sedang diputar")}</b>
+        <button type="button" className="full-ib" onClick={() => openPicker(track)} aria-label={tr("Simpan ke playlist")}>
           <ListPlus size={22} />
         </button>
       </div>
@@ -299,15 +302,15 @@ function FullBody({ track }: { track: Track }) {
                 {(lyState === 'loading' || lyState === 'idle') && (
                   <div className="lyrics-loading">
                     <div className="spin" />
-                    <span>Memuat lirik...</span>
+                    <span>{tr("Memuat lirik...")}</span>
                   </div>
                 )}
                 {lyState === 'none' && (
                   <div className="lyrics-loading">
                     <span style={{ fontSize: 15 }}>
-                      Lirik tidak tersedia 😔
+                      {tr("Lirik tidak tersedia 😔")}
                       <br />
-                      <span style={{ fontSize: 12 }}>Coba lagu berbeda</span>
+                      <span style={{ fontSize: 12 }}>{tr("Coba lagu berbeda")}</span>
                     </span>
                   </div>
                 )}
@@ -340,7 +343,7 @@ function FullBody({ track }: { track: Track }) {
             </Link>
           ) : null}
         </div>
-        <button type="button" className={`full-ib${liked ? ' liked-on' : ''}`} onClick={() => toggleLike(track)} aria-label="Suka">
+        <button type="button" className={`full-ib${liked ? ' liked-on' : ''}`} onClick={() => toggleLike(track)} aria-label={tr("Suka")}>
           <Heart size={22} fill={liked ? 'currentColor' : 'none'} />
         </button>
       </div>
@@ -354,7 +357,7 @@ function FullBody({ track }: { track: Track }) {
         value={Math.min(time, duration > 0 ? duration : 1)}
         onChange={(e) => seek(Number(e.target.value))}
         style={{ ['--p' as string]: `${pct}%` }}
-        aria-label="Posisi lagu"
+        aria-label={tr("Posisi lagu")}
       />
       <div className="times">
         <span>{fmt(time)}</span>
@@ -362,13 +365,13 @@ function FullBody({ track }: { track: Track }) {
       </div>
 
       <div className="full-ctrl">
-        <button type="button" className={`fc${repeat ? ' on' : ''}`} onClick={toggleRepeat} aria-label="Ulangi">
+        <button type="button" className={`fc${repeat ? ' on' : ''}`} onClick={toggleRepeat} aria-label={tr("Ulangi")}>
           <Repeat size={22} />
         </button>
-        <button type="button" className="fc" onClick={prev} aria-label="Sebelumnya">
+        <button type="button" className="fc" onClick={prev} aria-label={tr("Sebelumnya")}>
           <SkipBack size={26} fill="currentColor" />
         </button>
-        <button type="button" className="fc main" onClick={toggle} aria-label={playing ? 'Jeda' : 'Putar'}>
+        <button type="button" className="fc main" onClick={toggle} aria-label={playing ? 'Jeda' : tr('Putar')}>
           {buffering ? (
             <Loader2 size={30} style={{ animation: 'spin 1s linear infinite' }} />
           ) : playing ? (
@@ -377,10 +380,10 @@ function FullBody({ track }: { track: Track }) {
             <Play size={30} fill="currentColor" />
           )}
         </button>
-        <button type="button" className="fc" onClick={next} aria-label="Berikutnya">
+        <button type="button" className="fc" onClick={next} aria-label={tr("Berikutnya")}>
           <SkipForward size={26} fill="currentColor" />
         </button>
-        <button type="button" className={`fc${sleepEnd ? ' on' : ''}`} onClick={cycleSleep} aria-label="Timer tidur">
+        <button type="button" className={`fc${sleepEnd ? ' on' : ''}`} onClick={cycleSleep} aria-label={tr("Timer tidur")}>
           <Moon size={22} />
         </button>
       </div>
@@ -388,7 +391,7 @@ function FullBody({ track }: { track: Track }) {
       <div className="full-actions">
         <button type="button" className="fa" onClick={() => openPicker(track)}>
           <ListPlus size={18} />
-          Playlist
+          {tr("Playlist")}
         </button>
         <button type="button" className="fa" onClick={download} disabled={dlBusy}>
           {dlBusy ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
@@ -405,7 +408,7 @@ function FullBody({ track }: { track: Track }) {
       {view === 'art' && (
         <div className="ta-wrap">
           <div className="ta-line" />
-          <div className="ta-label">Tentang Artis</div>
+          <div className="ta-label">{tr("Tentang Artis")}</div>
           <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="ta-banner" onClick={closeFull}>
             {track.thumb ? <img src={hiRes(track.thumb)} alt="" /> : null}
             <span className="ov" />
@@ -418,15 +421,15 @@ function FullBody({ track }: { track: Track }) {
             {bioState === 'loading' && (
               <div className="t" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="spin" style={{ width: 14, height: 14, borderWidth: 2 }} />
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Memuat info artis...</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{tr("Memuat info artis...")}</span>
               </div>
             )}
-            {bioState === 'none' && <div className="t">Info artis tidak tersedia.</div>}
+            {bioState === 'none' && <div className="t">{tr("Info artis tidak tersedia.")}</div>}
             {bioState === 'ok' && (
               <>
                 <div className={`t${bioOpen ? '' : ' clamp'}`}>{bio}</div>
                 <button type="button" className="ta-more" onClick={() => setBioOpen((o) => !o)}>
-                  {bioOpen ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'}
+                  {bioOpen ? 'Tampilkan lebih sedikit' : tr('Tampilkan lebih banyak')}
                 </button>
               </>
             )}
@@ -436,7 +439,7 @@ function FullBody({ track }: { track: Track }) {
             className={`ta-sub${isFollowing(track.artist) ? ' on' : ''}`}
             onClick={() => toggleArtist(track.artist)}
           >
-            {isFollowing(track.artist) ? '✓ Subscribed' : 'Subscribe'}
+            {isFollowing(track.artist) ? '✓ Subscribed' : tr('Subscribe')}
           </button>
           {explore.length > 0 && (
             <>
@@ -457,9 +460,9 @@ function FullBody({ track }: { track: Track }) {
 
       {view === 'queue' && (
         <div ref={panelRef} className="un-wrap">
-          <div className="un-head">Up Next</div>
+          <div className="un-head">{tr("Up Next")}</div>
           <div className="un-list">
-            {queue.length === 0 && <div className="un-empty">Belum ada antrian</div>}
+            {queue.length === 0 && <div className="un-empty">{tr("Belum ada antrian")}</div>}
             {queue.map((t, i) => {
               const now = t.id === track.id;
               return (
@@ -500,19 +503,19 @@ function FullBody({ track }: { track: Track }) {
       <div className="full-tabs">
         <button type="button" className={`btab${view === 'queue' ? ' active' : ''}`} onClick={() => toggleView('queue')}>
           <ListMusic />
-          Up next
+          {tr("Up next")}
         </button>
         <button type="button" className={`btab${view === 'lyrics' ? ' active' : ''}`} onClick={() => toggleView('lyrics')}>
           <Pencil />
-          Lyrics
+          {tr("Lyrics")}
         </button>
         <button type="button" className="btab" onClick={openComments}>
           <MessageSquare />
-          Komentar
+          {tr("Komentar")}
         </button>
         <Link href={`/artist?name=${encodeURIComponent(track.artist)}`} className="btab" onClick={closeFull}>
           <User />
-          Lihat artis
+          {tr("Lihat artis")}
         </Link>
       </div>
     </div>
