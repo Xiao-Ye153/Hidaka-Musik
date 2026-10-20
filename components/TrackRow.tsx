@@ -6,8 +6,10 @@ import type { Track } from '@/lib/tracks';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 export default function TrackRow({ track, index, queue }: { track: Track; index: number; queue: Track[] }) {
+  const { t: tr } = useI18n();
   const { current, playing, play, toggle } = usePlayer();
   const { openPicker } = useExtras();
   const now = current?.id === track.id;
@@ -29,7 +31,7 @@ export default function TrackRow({ track, index, queue }: { track: Track; index:
           {now && playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
         </span>
       </button>
-      <button type="button" className="row-more" aria-label="Simpan ke playlist" onClick={() => openPicker(track)}>
+      <button type="button" className="row-more" aria-label={tr("Simpan ke playlist")} onClick={() => openPicker(track)}>
         <MoreVertical size={20} />
       </button>
     </div>
