@@ -6,6 +6,7 @@ import AuthProvider from './AuthProvider';
 import BottomNav from './BottomNav';
 import CommentsSheet from './CommentsSheet';
 import Extras from './Extras';
+import I18nProvider from './I18nProvider';
 import FullPlayer from './FullPlayer';
 import MiniPlayer from './MiniPlayer';
 import PlaylistSheet from './PlaylistSheet';
@@ -18,6 +19,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
 
   return (
+    <I18nProvider>
     <Extras>
       <AuthProvider>
         <ProgressProvider>
@@ -36,5 +38,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </ProgressProvider>
       </AuthProvider>
     </Extras>
+    </I18nProvider>
   );
 }
