@@ -26,6 +26,7 @@ import { useAuth } from './AuthProvider';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
 import { useProgress2 } from './ProgressProvider';
+import { useI18n } from '@/components/I18nProvider';
 
 type CommentDoc = {
   id: string;
@@ -53,6 +54,7 @@ function Av({ name, photo, small }: { name: string; photo?: string | null; small
 }
 
 export default function CommentsSheet() {
+  const { t: tr } = useI18n();
   const { commentsOpen, closeComments, closeFull } = useExtras();
   const { current } = usePlayer();
   const { user, handle, photo, displayName } = useAuth();
@@ -157,7 +159,7 @@ export default function CommentsSheet() {
       setDoc(doc(db, 'user_profiles', user.uid), { commentCount: increment(1) }, { merge: true }).catch(() => {});
       setText('');
     } catch {
-      flash('Gagal kirim komentar');
+      flash(tr("Gagal kirim komentar"));
     }
     setSending(false);
   };
@@ -167,13 +169,13 @@ export default function CommentsSheet() {
     try {
       await deleteDoc(doc(getFirestore(fbApp()), 'track_comments', tid, 'comments', id));
     } catch {
-      flash('Gagal hapus komentar');
+      flash(tr("Gagal hapus komentar"));
     }
   };
 
   const toggleLike = (id: string) => {
     if (!user) {
-      flash('Masuk dulu untuk menyukai');
+      flash(tr("Masuk dulu untuk menyukai"));
       return;
     }
     setLikes((prev) => {
@@ -204,7 +206,7 @@ export default function CommentsSheet() {
         })
       }));
     } catch {
-      flash('Gagal memuat balasan');
+      flash(tr("Gagal memuat balasan"));
     }
   };
 
@@ -233,7 +235,7 @@ export default function CommentsSheet() {
       setOpen((p) => ({ ...p, [id]: true }));
       loadReplies(id);
     } catch {
-      flash('Gagal kirim balasan');
+      flash(tr("Gagal kirim balasan"));
     }
   };
 
@@ -244,7 +246,7 @@ export default function CommentsSheet() {
       await updateDoc(doc(db, 'track_comments', tid, 'comments', cid), { replyCount: increment(-1) });
       setReplies((p) => ({ ...p, [cid]: (p[cid] || []).filter((x) => x.id !== rid) }));
     } catch {
-      flash('Gagal hapus balasan');
+      flash(tr("Gagal hapus balasan"));
     }
   };
 
@@ -253,21 +255,21 @@ export default function CommentsSheet() {
   return (
     <>
       <div className={`cm-backdrop${show ? ' open' : ''}`} onClick={closeComments} />
-      <section className={`cm-sheet${show ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Komentar" aria-hidden={!show}>
+      <section className={`cm-sheet${show ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label={tr("Komentar")} aria-hidden={!show}>
         <div className="cm-head">
-          <b>Komentar</b>
+          <b>{tr("Komentar")}</b>
           <span className="cm-count">{state === 'ok' ? items.length : ''}</span>
-          <button type="button" className="cm-x" onClick={closeComments} aria-label="Tutup">
+          <button type="button" className="cm-x" onClick={closeComments} aria-label={tr("Tutup")}>
             <X size={18} />
           </button>
         </div>
 
         {show && (
           <div className="cm-list">
-            {state === 'loading' && <div className="cm-empty">Memuat komentar...</div>}
-            {state === 'denied' && <div className="cm-empty">Komentar belum bisa diakses. Cek aturan Firestore di Firebase.</div>}
-            {state === 'error' && <div className="cm-empty">Gagal memuat komentar. Coba lagi nanti.</div>}
-            {state === 'ok' && items.length === 0 && <div className="cm-empty">💬 Belum ada komentar. Jadilah yang pertama!</div>}
+            {state === 'loading' && <div className="cm-empty">{tr("Memuat komentar...")}</div>}
+            {state === 'denied' && <div className="cm-empty">{tr("Komentar belum bisa diakses. Cek aturan Firestore di Firebase.")}</div>}
+            {state === 'error' && <div className="cm-empty">{tr("Gagal memuat komentar. Coba lagi nanti.")}</div>}
+            {state === 'ok' && items.length === 0 && <div className="cm-empty">{tr("💬 Belum ada komentar. Jadilah yang pertama!")}</div>}
 
             {state === 'ok' &&
               items.map((c) => {
@@ -285,7 +287,7 @@ export default function CommentsSheet() {
                         <Link href={`/u?uid=${c.uid}`} className="cm-name" onClick={() => { closeComments(); closeFull(); }}>
                           {c.user}
                         </Link>
-                        {c.role ? <span className="cm-badge">{c.role}</span> : null}
+                        {c.role ? <span className="cm-badge">{tr(c.role)}</span> : null}
                         {c.level ? <span className="cm-badge">Lv.{c.level}</span> : null}
                         <span>{timeAgo(c.ms)}</span>
                       </div>
@@ -299,16 +301,16 @@ export default function CommentsSheet() {
                           type="button"
                           className="cm-act"
                           onClick={() => {
-                            if (!user) return flash('Masuk dulu untuk membalas');
+                            if (!user) return flash(tr("Masuk dulu untuk membalas"));
                             setReplyFor(replyFor === c.id ? null : c.id);
                             setReplyText('');
                           }}
                         >
                           <MessageCircle size={15} />
-                          Balas
+                          {tr("Balas")}
                         </button>
                         {own && (
-                          <button type="button" className="cm-act" onClick={() => remove(c.id)} aria-label="Hapus">
+                          <button type="button" className="cm-act" onClick={() => remove(c.id)} aria-label={tr("Hapus")}>
                             <Trash2 size={15} />
                           </button>
                         )}
@@ -320,10 +322,10 @@ export default function CommentsSheet() {
                             autoFocus
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="Tulis balasan..."
+                            placeholder={tr("Tulis balasan...")}
                             onKeyDown={(e) => e.key === 'Enter' && sendReply(c.id)}
                           />
-                          <button type="button" className="cm-send" onClick={() => sendReply(c.id)} aria-label="Kirim balasan">
+                          <button type="button" className="cm-send" onClick={() => sendReply(c.id)} aria-label={tr("Kirim balasan")}>
                             <Send size={16} />
                           </button>
                         </div>
@@ -332,13 +334,13 @@ export default function CommentsSheet() {
                       {rc > 0 && (
                         <button type="button" className="cm-act on" onClick={() => toggleReplies(c.id)}>
                           <ChevronDown size={15} style={{ transform: open[c.id] ? 'rotate(180deg)' : undefined }} />
-                          {rc} balasan
+                          {tr('{n} balasan', { n: rc })}
                         </button>
                       )}
 
                       {open[c.id] && (
                         <div className="cm-replies">
-                          {!replies[c.id] && <div className="cm-meta">Memuat balasan...</div>}
+                          {!replies[c.id] && <div className="cm-meta">{tr("Memuat balasan...")}</div>}
                           {(replies[c.id] || []).map((r) => (
                             <div key={r.id} className="cm-item" style={{ padding: '8px 0' }}>
                               <Av name={r.user} photo={r.photoURL} small />
@@ -349,7 +351,7 @@ export default function CommentsSheet() {
                                 </div>
                                 <div className="cm-text">{r.text}</div>
                                 {user && r.uid === user.uid && (
-                                  <button type="button" className="cm-act" onClick={() => removeReply(c.id, r.id)} aria-label="Hapus balasan">
+                                  <button type="button" className="cm-act" onClick={() => removeReply(c.id, r.id)} aria-label={tr("Hapus balasan")}>
                                     <Trash2 size={14} />
                                   </button>
                                 )}
@@ -372,16 +374,16 @@ export default function CommentsSheet() {
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Tulis komentar..."
+                placeholder={tr("Tulis komentar...")}
                 onKeyDown={(e) => e.key === 'Enter' && send()}
               />
-              <button type="button" className="cm-send" onClick={send} disabled={sending || !text.trim()} aria-label="Kirim">
+              <button type="button" className="cm-send" onClick={send} disabled={sending || !text.trim()} aria-label={tr("Kirim")}>
                 <Send size={16} />
               </button>
             </>
           ) : (
             <Link href="/login" className="cm-login" onClick={closeComments}>
-              Masuk untuk berkomentar
+              {tr("Masuk untuk berkomentar")}
             </Link>
           )}
         </div>
