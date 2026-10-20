@@ -7,8 +7,10 @@ import { ChevronLeft, Play, Trash2, X } from 'lucide-react';
 import { useExtras } from '@/components/Extras';
 import { usePlayer } from '@/components/Providers';
 import TrackRow from '@/components/TrackRow';
+import { useI18n } from '@/components/I18nProvider';
 
 function PlaylistView() {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
   const { playlists, removeFromPlaylist, deletePlaylist } = useExtras();
@@ -19,12 +21,12 @@ function PlaylistView() {
     return (
       <>
         <div className="back-row">
-          <Link href="/library" className="round-btn" aria-label="Kembali">
+          <Link href="/library" className="round-btn" aria-label={tr("Kembali")}>
             <ChevronLeft size={22} />
           </Link>
         </div>
-        <h1 className="page-title">Playlist tidak ditemukan</h1>
-        <p className="page-sub">Playlist ini mungkin sudah dihapus.</p>
+        <h1 className="page-title">{tr("Playlist tidak ditemukan")}</h1>
+        <p className="page-sub">{tr("Playlist ini mungkin sudah dihapus.")}</p>
       </>
     );
   }
@@ -32,7 +34,7 @@ function PlaylistView() {
   return (
     <>
       <div className="back-row">
-        <Link href="/library" className="round-btn" aria-label="Kembali">
+        <Link href="/library" className="round-btn" aria-label={tr("Kembali")}>
           <ChevronLeft size={22} />
         </Link>
       </div>
@@ -47,7 +49,7 @@ function PlaylistView() {
           onClick={() => pl.tracks[0] && play(pl.tracks[0], pl.tracks)}
         >
           <Play size={18} fill="currentColor" />
-          Putar semua
+          {tr("Putar semua")}
         </button>
         <button
           type="button"
@@ -58,11 +60,11 @@ function PlaylistView() {
           }}
         >
           <Trash2 size={18} />
-          Hapus
+          {tr("Hapus")}
         </button>
       </div>
 
-      {pl.tracks.length === 0 && <p className="greeting-sub">Playlist masih kosong. Tambahkan lagu dari pemutar.</p>}
+      {pl.tracks.length === 0 && <p className="greeting-sub">{tr("Playlist masih kosong. Tambahkan lagu dari pemutar.")}</p>}
 
       <div className="track-list" style={{ marginTop: 22 }}>
         {pl.tracks.map((t, i) => (
@@ -70,7 +72,7 @@ function PlaylistView() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <TrackRow track={t} index={i} queue={pl.tracks} />
             </div>
-            <button type="button" className="round-btn" aria-label="Hapus dari playlist" onClick={() => removeFromPlaylist(pl.id, t.id)}>
+            <button type="button" className="round-btn" aria-label={tr("Hapus dari playlist")} onClick={() => removeFromPlaylist(pl.id, t.id)}>
               <X size={18} />
             </button>
           </div>
