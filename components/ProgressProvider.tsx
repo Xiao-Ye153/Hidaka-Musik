@@ -4,6 +4,7 @@ import '../app/level.css';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { doc, getFirestore, setDoc } from 'firebase/firestore';
 import { fbApp } from '@/lib/firebase';
+import { tNow } from '@/lib/i18n';
 import { computeLevelInfo } from '@/lib/level';
 import { useAuth } from './AuthProvider';
 import { usePlayer } from './Providers';
@@ -102,7 +103,7 @@ export default function ProgressProvider({ children }: { children: ReactNode }) 
         const after = computeLevelInfo(pts.current).level;
         dirty.current = true;
         setPoints(pts.current);
-        if (after > before) setToast(`🎉 Level Up! Sekarang Lv.${after}`);
+        if (after > before) setToast(tNow('🎉 Level Up! Sekarang Lv.{n}', { n: after }));
         persist();
       } else if (sec.current % 30 === 0) {
         persist();
