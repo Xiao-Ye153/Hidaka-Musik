@@ -20,7 +20,9 @@ import {
 import { useAuth } from '@/components/AuthProvider';
 import { useProgress2 } from '@/components/ProgressProvider';
 import { fbApp } from '@/lib/firebase';
+import { getCurrentLang } from '@/lib/i18n';
 import { roleFor } from '@/lib/roles';
+import { useI18n } from '@/components/I18nProvider';
 
 type Msg = {
   id: string;
@@ -33,10 +35,12 @@ type Msg = {
 };
 
 function clock(ms: number) {
-  return new Date(ms).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const l = getCurrentLang();
+  return new Date(ms).toLocaleTimeString(l === 'ru' ? 'ru-RU' : l === 'en' ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function ChatPage() {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const { user, photo, displayName, handle, profile } = useAuth();
   const { level } = useProgress2();
@@ -97,7 +101,7 @@ export default function ChatPage() {
     const t = text.trim();
     if (!t || !user || sending) return;
     if (Date.now() - lastSend.current < 1500) {
-      setNote('Pelan-pelan, tunggu sebentar');
+      setNote(tr("Pelan-pelan, tunggu sebentar"));
       return;
     }
     setSending(true);
@@ -115,7 +119,7 @@ export default function ChatPage() {
       stick.current = true;
       setText('');
     } catch {
-      setNote('Gagal mengirim pesan');
+      setNote(tr("Gagal mengirim pesan"));
     }
     setSending(false);
   };
@@ -124,27 +128,27 @@ export default function ChatPage() {
     try {
       await deleteDoc(doc(getFirestore(fbApp()), 'global_chat', id));
     } catch {
-      setNote('Gagal menghapus pesan');
+      setNote(tr("Gagal menghapus pesan"));
     }
   };
 
   return (
     <div className="ch-root">
       <div className="ch-head">
-        <button type="button" className="ch-back" onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))} aria-label="Kembali">
+        <button type="button" className="ch-back" onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))} aria-label={tr("Kembali")}>
           <ArrowLeft size={20} />
         </button>
         <div>
-          <div className="ch-title">Chat Global</div>
-          <div className="ch-sub">Ngobrol bareng pendengar lain</div>
+          <div className="ch-title">{tr("Chat Global")}</div>
+          <div className="ch-sub">{tr("Ngobrol bareng pendengar lain")}</div>
         </div>
       </div>
 
       <div className="ch-list" ref={listRef} onScroll={onScroll}>
-        {state === 'loading' && <div className="ch-note">Memuat chat...</div>}
+        {state === 'loading' && <div className="ch-note">{tr("Memuat chat...")}</div>}
         {state === 'denied' && <div className="ch-note">Chat belum bisa diakses. Cek aturan Firestore untuk koleksi global_chat.</div>}
-        {state === 'error' && <div className="ch-note">Gagal memuat chat. Coba lagi nanti.</div>}
-        {state === 'ok' && msgs.length === 0 && <div className="ch-note">💬 Belum ada pesan. Mulai obrolan pertama!</div>}
+        {state === 'error' && <div className="ch-note">{tr("Gagal memuat chat. Coba lagi nanti.")}</div>}
+        {state === 'ok' && msgs.length === 0 && <div className="ch-note">{tr("💬 Belum ada pesan. Mulai obrolan pertama!")}</div>}
 
         {msgs.map((m) => {
           const own = !!user && m.uid === user.uid;
@@ -160,7 +164,7 @@ export default function ChatPage() {
                   <span>{clock(m.ms)}</span>
                   {own && (
                     <button type="button" className="ch-del" onClick={() => remove(m.id)}>
-                      Hapus
+                      {tr("Hapus")}
                     </button>
                   )}
                 </div>
@@ -177,17 +181,17 @@ export default function ChatPage() {
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Tulis pesan..."
+              placeholder={tr("Tulis pesan...")}
               maxLength={300}
               onKeyDown={(e) => e.key === 'Enter' && send()}
             />
-            <button type="button" className="ch-send" onClick={send} disabled={sending || !text.trim()} aria-label="Kirim">
+            <button type="button" className="ch-send" onClick={send} disabled={sending || !text.trim()} aria-label={tr("Kirim")}>
               <Send size={18} />
             </button>
           </>
         ) : (
           <Link href="/login" className="ch-login">
-            Masuk untuk ikut ngobrol
+            {tr("Masuk untuk ikut ngobrol")}
           </Link>
         )}
       </div>
