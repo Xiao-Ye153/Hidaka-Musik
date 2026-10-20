@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { APP } from '@/lib/config';
+import { useI18n } from '@/components/I18nProvider';
 
 const NOTES = [
   { c: '♪', left: '8%', delay: '0s' },
@@ -13,6 +14,7 @@ const NOTES = [
 ];
 
 export default function Splash() {
+  const { t: tr } = useI18n();
   const [show, setShow] = useState(true);
   const [hide, setHide] = useState(false);
 
@@ -54,7 +56,7 @@ export default function Splash() {
         </div>
       </div>
       <div className="splash-name">{APP.name}</div>
-      <div className="splash-sub">Menyiapkan musikmu</div>
+      <div className="splash-sub">{tr("Menyiapkan musikmu")}</div>
       <div className="splash-bar">
         <i style={{ animationDuration: '10s' }} />
       </div>
