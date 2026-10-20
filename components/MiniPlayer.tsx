@@ -4,8 +4,10 @@ import { Heart, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-re
 import { useExtras } from './Extras';
 import { usePlayer, useProgress } from './Providers';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 export default function MiniPlayer() {
+  const { t: tr } = useI18n();
   const { current, playing, buffering, toggle, next, prev, close, isLiked, toggleLike } = usePlayer();
   const { time, duration } = useProgress();
   const { openFull } = useExtras();
@@ -15,7 +17,7 @@ export default function MiniPlayer() {
 
   return (
     <div className={`mini glass${playing ? ' playing' : ''}`}>
-      <button type="button" className="mini-hit" onClick={openFull} aria-label="Buka pemutar">
+      <button type="button" className="mini-hit" onClick={openFull} aria-label={tr("Buka pemutar")}>
         <TrackThumb track={current} className="thumb sm" />
         <div className="row-body">
           <div className="row-title" style={{ fontSize: 15 }}>
@@ -27,10 +29,10 @@ export default function MiniPlayer() {
         </div>
       </button>
       <div className="mini-ctrl">
-        <button type="button" onClick={prev} aria-label="Sebelumnya">
+        <button type="button" onClick={prev} aria-label={tr("Sebelumnya")}>
           <SkipBack size={18} fill="currentColor" />
         </button>
-        <button type="button" className="mini-play" onClick={toggle} aria-label={playing ? 'Jeda' : 'Putar'}>
+        <button type="button" className="mini-play" onClick={toggle} aria-label={playing ? 'Jeda' : tr('Putar')}>
           {buffering ? (
             <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
           ) : playing ? (
@@ -39,18 +41,18 @@ export default function MiniPlayer() {
             <Play size={20} fill="currentColor" />
           )}
         </button>
-        <button type="button" onClick={next} aria-label="Berikutnya">
+        <button type="button" onClick={next} aria-label={tr("Berikutnya")}>
           <SkipForward size={18} fill="currentColor" />
         </button>
         <button
           type="button"
           onClick={() => toggleLike(current)}
-          aria-label="Suka"
+          aria-label={tr("Suka")}
           className={liked ? 'liked-on' : ''}
         >
           <Heart size={19} fill={liked ? 'currentColor' : 'none'} />
         </button>
-        <button type="button" onClick={close} aria-label="Tutup">
+        <button type="button" onClick={close} aria-label={tr("Tutup")}>
           <X size={19} />
         </button>
       </div>
