@@ -12,6 +12,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { usePlayer } from '@/components/Providers';
 import { searchTracks } from '@/lib/api';
 import { HOME_CHIPS, HOME_QUERIES, type Track } from '@/lib/tracks';
+import { useI18n } from '@/components/I18nProvider';
 
 const CHIP_ICON: Record<string, typeof Music2 | null | undefined> = {
   all: null,
@@ -30,12 +31,13 @@ function greet(h: number) {
 }
 
 export default function HomePage() {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const { handle } = useAuth();
   const { current, playing, recent, play, toggle, isLiked, toggleLike } = usePlayer();
   const [chip, setChip] = useState('all');
   const randomQ = useRef(HOME_QUERIES[Math.floor(Math.random() * HOME_QUERIES.length)]);
-  const [hello, setHello] = useState('Halo, selamat menikmati musik.');
+  const [hello, setHello] = useState(tr('Halo, selamat menikmati musik.'));
   const [picks, setPicks] = useState<Track[]>([]);
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
 
@@ -79,9 +81,9 @@ export default function HomePage() {
         Hai, @{handle}
         <em>.</em>
       </h1>
-      <p className="greeting-sub">{hello}</p>
+      <p className="greeting-sub">{tr(hello)}</p>
 
-      <div className="chips" role="tablist" aria-label="Kategori">
+      <div className="chips" role="tablist" aria-label={tr("Kategori")}>
         {HOME_CHIPS.map((c) => {
           const Icon = CHIP_ICON[c.icon];
           return (
@@ -94,7 +96,7 @@ export default function HomePage() {
               onClick={() => setChip(c.id)}
             >
               {Icon ? <Icon size={19} strokeWidth={1.8} /> : null}
-              {c.label}
+              {tr(c.label)}
             </button>
           );
         })}
@@ -103,31 +105,31 @@ export default function HomePage() {
       <h2 className="section-title">Curated &amp; trending</h2>
 
       <section className="hero">
-        <div className="hero-index">01 / DAILY MIX</div>
+        <div className="hero-index">{tr("01 / DAILY MIX")}</div>
         <div className="hero-kicker">
           <span className="dot" />
-          The daily edit
+          {tr("The daily edit")}
         </div>
-        <h3 className="hero-title">Discover weekly</h3>
+        <h3 className="hero-title">{tr("Discover weekly")}</h3>
         <p className="hero-text">
-          Temukan favorit baru.
+          {tr("Temukan favorit baru.")}
           <br />
-          Satu lagu, sejuta suasana.
+          {tr("Satu lagu, sejuta suasana.")}
         </p>
         <div className="hero-actions">
-          <button type="button" className="play-lg" aria-label={heroPlaying ? 'Jeda' : 'Putar'} onClick={onHeroPlay}>
+          <button type="button" className="play-lg" aria-label={heroPlaying ? 'Jeda' : tr('Putar')} onClick={onHeroPlay}>
             {heroPlaying ? <Pause size={34} fill="currentColor" /> : <Play size={34} fill="currentColor" />}
           </button>
           <button
             type="button"
             className={`soft-btn${heroTrack && isLiked(heroTrack.id) ? ' liked' : ''}`}
-            aria-label="Suka"
+            aria-label={tr("Suka")}
             disabled={!heroTrack}
             onClick={() => heroTrack && toggleLike(heroTrack)}
           >
             <Heart size={26} fill={heroTrack && isLiked(heroTrack.id) ? 'currentColor' : 'none'} />
           </button>
-          <Link href="/search" className="soft-btn" aria-label="Jelajahi">
+          <Link href="/search" className="soft-btn" aria-label={tr("Jelajahi")}>
             <ArrowUpRight size={26} />
           </Link>
         </div>
@@ -141,14 +143,14 @@ export default function HomePage() {
           </span>
           <div className="tile-kicker">
             <AudioLines size={16} />
-            In your zone
+            {tr("In your zone")}
           </div>
           <div className="tile-title">
-            Find your
+            {tr("Find your")}
             <br />
-            flow.
+            {tr("flow.")}
           </div>
-          <p className="tile-text">Musik untuk fokus</p>
+          <p className="tile-text">{tr("Musik untuk fokus")}</p>
         </Link>
         <Link href="/search?q=lagu%20santai%20indonesia" className="tile">
           <span className="rings" aria-hidden="true" style={{ left: 'auto', right: -22, opacity: 0.35 }} />
@@ -157,14 +159,14 @@ export default function HomePage() {
           </span>
           <div className="tile-kicker">
             <Moon size={16} />
-            Slow it down
+            {tr("Slow it down")}
           </div>
           <div className="tile-title">
-            After
+            {tr("After")}
             <br />
-            hours.
+            {tr("hours.")}
           </div>
-          <p className="tile-text">Santai. Nikmati nadanya.</p>
+          <p className="tile-text">{tr("Santai. Nikmati nadanya.")}</p>
         </Link>
       </div>
 
@@ -172,22 +174,22 @@ export default function HomePage() {
       <SpeedDial tracks={picks} />
 
       <div className="section-head">
-        <h2 className="section-title">Pilihan harian</h2>
+        <h2 className="section-title">{tr("Pilihan harian")}</h2>
         <button
           type="button"
           className="hs-btn"
           disabled={picks.length === 0}
           onClick={() => picks[0] && play(picks[0], picks)}
         >
-          Putar semua
+          {tr("Putar semua")}
         </button>
       </div>
 
-      {status === 'loading' && <p className="greeting-sub">Memuat lagu...</p>}
+      {status === 'loading' && <p className="greeting-sub">{tr("Memuat lagu...")}</p>}
       {status === 'error' && (
-        <p className="greeting-sub">Lagu belum bisa dimuat. Cek koneksi, lalu coba lagi nanti.</p>
+        <p className="greeting-sub">{tr("Lagu belum bisa dimuat. Cek koneksi, lalu coba lagi nanti.")}</p>
       )}
-      {status === 'ok' && picks.length === 0 && <p className="greeting-sub">Belum ada lagu untuk kategori ini.</p>}
+      {status === 'ok' && picks.length === 0 && <p className="greeting-sub">{tr("Belum ada lagu untuk kategori ini.")}</p>}
 
       <div className="track-list">
         {picks.slice(0, 8).map((t, i) => (
@@ -198,8 +200,8 @@ export default function HomePage() {
       {recent.length > 0 && (
         <>
           <div className="section-head">
-            <h2 className="section-title">Putar lagi</h2>
-            <span className="section-tag">On repeat</span>
+            <h2 className="section-title">{tr("Putar lagi")}</h2>
+            <span className="section-tag">{tr("On repeat")}</span>
           </div>
 
           <div className="hscroll">
