@@ -1,3 +1,5 @@
+import { getCurrentLang, tNow } from './i18n';
+
 export const ROLE_TIERS = [
   { min: 0, name: 'Pendengar' },
   { min: 10, name: 'Pendengar Aktif' },
@@ -18,13 +20,14 @@ export function roleFor(commentCount: number) {
 }
 
 export function timeAgo(ts: number) {
+  const loc = getCurrentLang() === 'ru' ? 'ru-RU' : getCurrentLang() === 'en' ? 'en-US' : 'id-ID';
   const d = Date.now() - ts;
   const m = Math.floor(d / 60000);
   const h = Math.floor(d / 3600000);
   const dy = Math.floor(d / 86400000);
-  if (m < 1) return 'Baru saja';
-  if (m < 60) return `${m} menit lalu`;
-  if (h < 24) return `${h} jam lalu`;
-  if (dy < 30) return `${dy} hari lalu`;
-  return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  if (m < 1) return tNow('Baru saja');
+  if (m < 60) return tNow('{n} menit lalu', { n: m });
+  if (h < 24) return tNow('{n} jam lalu', { n: h });
+  if (dy < 30) return tNow('{n} hari lalu', { n: dy });
+  return new Date(ts).toLocaleDateString(loc, { day: 'numeric', month: 'short' });
 }
