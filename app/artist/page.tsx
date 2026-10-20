@@ -12,8 +12,10 @@ import { cleanArtistName, hiRes, searchTracks } from '@/lib/api';
 import { getArtistBio } from '@/lib/bio';
 import { useAuth } from '@/components/AuthProvider';
 import type { Track } from '@/lib/tracks';
+import { useI18n } from '@/components/I18nProvider';
 
 function ArtistView() {
+  const { t: tr, lang } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
   const name = (params.get('name') || '').trim();
@@ -44,16 +46,16 @@ function ArtistView() {
     })();
     setBio('');
     setBioLoading(true);
-    getArtistBio(clean, user?.uid ?? null)
+    getArtistBio(clean, user?.uid ?? null, lang)
       .then((b) => {
         if (b) setBio(b);
       })
       .catch(() => {})
       .finally(() => setBioLoading(false));
     return () => ctl.abort();
-  }, [name, clean, user?.uid]);
+  }, [name, clean, user?.uid, lang]);
 
-  if (!name) return <p className="greeting-sub">Nama artis tidak ada.</p>;
+  if (!name) return <p className="greeting-sub">{tr("Nama artis tidak ada.")}</p>;
 
   const following = isFollowing(name);
   const hero = songs[0]?.thumb ? hiRes(songs[0].thumb) : undefined;
@@ -74,7 +76,7 @@ function ArtistView() {
     <>
       <div className="ap-hero">
         {hero ? <img src={hero} alt="" /> : null}
-        <button type="button" className="ap-back" onClick={goBack} aria-label="Kembali">
+        <button type="button" className="ap-back" onClick={goBack} aria-label={tr("Kembali")}>
           <ArrowLeft size={20} />
         </button>
         <div className="ap-name">{name}</div>
@@ -82,39 +84,39 @@ function ArtistView() {
 
       <div className="ap-actions">
         <button type="button" className={`ap-btn${following ? ' on' : ''}`} onClick={() => toggleArtist(name)}>
-          {following ? 'Subscribed' : 'Subscribe'}
+          {following ? 'Subscribed' : tr('Subscribe')}
         </button>
         <button type="button" className="ap-btn" onClick={radio}>
           <Radio size={16} />
-          Radio
+          {tr("Radio")}
         </button>
         <button
           type="button"
           className="ap-play"
           disabled={songs.length === 0}
           onClick={() => songs[0] && play(songs[0], songs)}
-          aria-label="Putar"
+          aria-label={tr("Putar")}
         >
           <Play size={22} fill="currentColor" />
         </button>
       </div>
 
       <div className="ap-about">
-        <h3>Tentang</h3>
+        <h3>{tr("Tentang")}</h3>
         <div className="ap-badge">Artis • {name}</div>
         <div className="ap-text">
           {bioLoading
-            ? 'Memuat info artis...'
-            : bio || `Dengarkan karya-karya terbaik dari ${clean}. Jelajahi lagu populer, album terbaru, dan single yang telah dirilis.`}
+            ? tr('Memuat info artis...')
+            : bio || tr('Dengarkan karya-karya terbaik dari {name}. Jelajahi lagu populer, album terbaru, dan single yang telah dirilis.', { name: clean })}
         </div>
       </div>
 
       <section className="hs">
         <div className="hs-head">
-          <h2 className="hs-title">Top songs</h2>
+          <h2 className="hs-title">{tr("Top songs")}</h2>
         </div>
         {status === 'loading' && <Spin />}
-        {status === 'error' && <p className="hs-note">Lagu belum bisa dimuat.</p>}
+        {status === 'error' && <p className="hs-note">{tr("Lagu belum bisa dimuat.")}</p>}
         <div className="track-list">
           {songs.map((t, i) => (
             <TrackRow key={t.id} track={t} index={i} queue={songs} />
