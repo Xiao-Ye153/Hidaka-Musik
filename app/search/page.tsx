@@ -8,6 +8,7 @@ import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
 import { searchTracks } from '@/lib/api';
 import type { Track } from '@/lib/tracks';
+import { useI18n } from '@/components/I18nProvider';
 
 const SECTIONS = [
   { title: 'Rilis Anyar', Icon: Sparkles, color: '#facc15', q: 'lagu indonesia rilis terbaru 2025' },
@@ -18,6 +19,7 @@ const SECTIONS = [
 ];
 
 function Browse() {
+  const { t: tr } = useI18n();
   const { play } = usePlayer();
   const [rows, setRows] = useState<Record<string, Track[]>>({});
 
@@ -47,7 +49,7 @@ function Browse() {
           <section key={title} className="s-sec">
             <div className="s-head">
               <Icon size={20} color={color} />
-              {title}
+              {tr(title)}
             </div>
             <div className="hrow">
               {list.map((t) => (
@@ -71,6 +73,7 @@ function Browse() {
 }
 
 function SearchView() {
+  const { t: tr } = useI18n();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [term, setTerm] = useState(params.get('q') ?? '');
@@ -104,40 +107,40 @@ function SearchView() {
 
   return (
     <>
-      <h1 className="page-title">Cari</h1>
-      <p className="page-sub">Lagu, artis, dan playlist</p>
+      <h1 className="page-title">{tr("Cari")}</h1>
+      <p className="page-sub">{tr("Lagu, artis, dan playlist")}</p>
 
       <div className="search-box glass-soft">
         <SearchIcon size={22} />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Mau dengar apa hari ini?"
-          aria-label="Cari lagu"
+          placeholder={tr("Mau dengar apa hari ini?")}
+          aria-label={tr("Cari lagu")}
           enterKeyHint="search"
           onKeyDown={(e) => e.key === 'Enter' && setTerm(q.trim())}
         />
         {q ? (
-          <button type="button" aria-label="Hapus" onClick={() => setQ('')}>
+          <button type="button" aria-label={tr("Hapus")} onClick={() => setQ('')}>
             <X size={20} />
           </button>
         ) : null}
         <button type="button" className="s-go" onClick={() => setTerm(q.trim())}>
-          Cari
+          {tr("Cari")}
         </button>
       </div>
 
       {status === 'idle' && <Browse />}
 
-      {status === 'loading' && <p className="greeting-sub" style={{ marginTop: 24 }}>Mencari...</p>}
+      {status === 'loading' && <p className="greeting-sub" style={{ marginTop: 24 }}>{tr("Mencari...")}</p>}
       {status === 'error' && (
         <p className="greeting-sub" style={{ marginTop: 24 }}>
-          Pencarian belum bisa dilakukan. Coba lagi sebentar lagi.
+          {tr("Pencarian belum bisa dilakukan. Coba lagi sebentar lagi.")}
         </p>
       )}
       {status === 'ok' && results.length === 0 && (
         <p className="greeting-sub" style={{ marginTop: 24 }}>
-          Tidak ada hasil untuk &ldquo;{term}&rdquo;.
+          {tr('Tidak ada hasil untuk “{q}”.', { q: term })}
         </p>
       )}
 
