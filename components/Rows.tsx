@@ -7,6 +7,7 @@ import { searchTracks } from '@/lib/api';
 import type { Track } from '@/lib/tracks';
 import { usePlayer } from './Providers';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 export function Spin() {
   return (
@@ -32,6 +33,7 @@ export function HRow({ tracks, variant = 'card' }: { tracks: Track[]; variant?: 
 }
 
 export function ArtistRow({ tracks }: { tracks: Track[] }) {
+  const { t: tr } = useI18n();
   const seen = new Set<string>();
   const list: Track[] = [];
   for (const t of tracks) {
@@ -47,7 +49,7 @@ export function ArtistRow({ tracks }: { tracks: Track[] }) {
         <Link key={t.artist} href={`/artist?name=${encodeURIComponent(t.artist)}`} className="acard">
           <TrackThumb track={t} className="aimg" />
           <div className="hcard-title">{t.artist}</div>
-          <div className="hcard-sub">Artis</div>
+          <div className="hcard-sub">{tr("Artis")}</div>
         </Link>
       ))}
     </div>
@@ -114,6 +116,7 @@ export function LazyRow({
 }
 
 export function CommunityRow({ items }: { items: { title: string; q: string }[] }) {
+  const { t: tr } = useI18n();
   const { play } = usePlayer();
   const { ref, seen } = useInView<HTMLElement>();
   const [cards, setCards] = useState<{ title: string; tracks: Track[] }[]>([]);
@@ -144,7 +147,7 @@ export function CommunityRow({ items }: { items: { title: string; q: string }[] 
   return (
     <section className="hs" ref={ref}>
       <div className="hs-head">
-        <h2 className="hs-title">From the community</h2>
+        <h2 className="hs-title">{tr("From the community")}</h2>
       </div>
       {cards.length === 0 ? (
         <Spin />
