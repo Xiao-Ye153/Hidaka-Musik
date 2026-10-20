@@ -33,11 +33,13 @@ import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
 import TrackRow from './TrackRow';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 type Sheet = 'none' | 'edit' | 'fav' | 'pl';
 type Act = { id: string; text: string; ms: number };
 
 export default function ProfileView({ uid }: { uid: string }) {
+  const { t: tr } = useI18n();
   const router = useRouter();
   const { user, logout, refreshProfile } = useAuth();
   const { liked } = usePlayer();
@@ -147,7 +149,7 @@ export default function ProfileView({ uid }: { uid: string }) {
         setFollowers((n) => n + 1);
       }
     } catch {
-      flash('Follow belum diizinkan oleh aturan Firestore');
+      flash(tr("Follow belum diizinkan oleh aturan Firestore"));
     }
   };
 
@@ -158,7 +160,7 @@ export default function ProfileView({ uid }: { uid: string }) {
   };
 
   const saveEdit = async () => {
-    if (!user || !name.trim()) return flash('Nama tidak boleh kosong');
+    if (!user || !name.trim()) return flash(tr("Nama tidak boleh kosong"));
     setBusy(true);
     try {
       await setDoc(doc(db(), 'user_profiles', user.uid), { displayName: name.trim(), bio: bio.trim() }, { merge: true });
@@ -168,9 +170,9 @@ export default function ProfileView({ uid }: { uid: string }) {
       await refreshProfile();
       await reload();
       setSheet('none');
-      flash('Profil disimpan');
+      flash(tr("Profil disimpan"));
     } catch {
-      flash('Gagal menyimpan profil');
+      flash(tr("Gagal menyimpan profil"));
     }
     setBusy(false);
   };
@@ -178,28 +180,28 @@ export default function ProfileView({ uid }: { uid: string }) {
   const onAvatar = async (f: File | undefined) => {
     if (!f || !user) return;
     try {
-      flash('Mengunggah avatar...');
+      flash(tr("Mengunggah avatar..."));
       const url = await resizeImage(f, 160, 0.7, true);
       await setDoc(doc(db(), 'user_profiles', user.uid), { photoURL: url }, { merge: true });
       await refreshProfile();
       await reload();
-      flash('Avatar diperbarui');
+      flash(tr("Avatar diperbarui"));
     } catch (e) {
-      flash(e instanceof Error ? e.message : 'Gagal ganti avatar');
+      flash(e instanceof Error ? e.message : tr('Gagal ganti avatar'));
     }
   };
 
   const onGallery = async (f: File | undefined) => {
     if (!f || !user) return;
-    if ((data?.gallery?.length || 0) >= 6) return flash('Galeri maksimal 6 foto');
+    if ((data?.gallery?.length || 0) >= 6) return flash(tr("Galeri maksimal 6 foto"));
     try {
-      flash('Mengunggah foto...');
+      flash(tr("Mengunggah foto..."));
       const url = await resizeImage(f, 480, 0.7);
       await setDoc(doc(db(), 'user_profiles', user.uid), { gallery: arrayUnion(url) }, { merge: true });
       await reload();
-      flash('Foto ditambahkan');
+      flash(tr("Foto ditambahkan"));
     } catch (e) {
-      flash(e instanceof Error ? e.message : 'Gagal menambah foto');
+      flash(e instanceof Error ? e.message : tr('Gagal menambah foto'));
     }
   };
 
@@ -209,7 +211,7 @@ export default function ProfileView({ uid }: { uid: string }) {
       await setDoc(doc(db(), 'user_profiles', user.uid), { gallery: arrayRemove(url) }, { merge: true });
       await reload();
     } catch {
-      flash('Gagal menghapus foto');
+      flash(tr("Gagal menghapus foto"));
     }
   };
 
@@ -225,7 +227,7 @@ export default function ProfileView({ uid }: { uid: string }) {
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
     if (arr.includes(v)) set(arr.filter((x) => x !== v));
-    else if (arr.length >= 5) flash('Maksimal 5');
+    else if (arr.length >= 5) flash(tr("Maksimal 5"));
     else set([...arr, v]);
   };
 
@@ -240,7 +242,7 @@ export default function ProfileView({ uid }: { uid: string }) {
       await reload();
       setSheet('none');
     } catch {
-      flash('Gagal menyimpan');
+      flash(tr("Gagal menyimpan"));
     }
     setBusy(false);
   };
@@ -256,7 +258,7 @@ export default function ProfileView({ uid }: { uid: string }) {
       await reload();
       setSheet('none');
     } catch {
-      flash('Gagal menyimpan');
+      flash(tr("Gagal menyimpan"));
     }
     setBusy(false);
   };
@@ -264,17 +266,17 @@ export default function ProfileView({ uid }: { uid: string }) {
   const share = async () => {
     const url = typeof window === 'undefined' ? '' : `${window.location.origin}/u?uid=${uid}`;
     try {
-      if (navigator.share) await navigator.share({ title: data?.displayName || 'Profil', url });
+      if (navigator.share) await navigator.share({ title: data?.displayName || tr('Profil'), url });
       else {
         await navigator.clipboard.writeText(url);
-        flash('Link profil disalin');
+        flash(tr("Link profil disalin"));
       }
     } catch {}
   };
 
-  if (state === 'loading') return <p className="greeting-sub">Memuat profil...</p>;
-  if (state === 'none') return <p className="greeting-sub">Pengguna tidak ditemukan.</p>;
-  if (state === 'error' || !data) return <p className="greeting-sub">Profil belum bisa dimuat. Cek aturan Firestore atau koneksi.</p>;
+  if (state === 'loading') return <p className="greeting-sub">{tr("Memuat profil...")}</p>;
+  if (state === 'none') return <p className="greeting-sub">{tr("Pengguna tidak ditemukan.")}</p>;
+  if (state === 'error' || !data) return <p className="greeting-sub">{tr("Profil belum bisa dimuat. Cek aturan Firestore atau koneksi.")}</p>;
 
   const nm = data.displayName || 'User';
   const cc = data.commentCount || 0;
@@ -286,11 +288,11 @@ export default function ProfileView({ uid }: { uid: string }) {
     <>
       <div className="profile-hero" />
       <div className="profile-actions">
-        <button type="button" className="round-btn" aria-label="Bagikan" onClick={share}>
+        <button type="button" className="round-btn" aria-label={tr("Bagikan")} onClick={share}>
           <Share2 size={21} />
         </button>
         {own && (
-          <button type="button" className="round-btn" aria-label="Keluar" onClick={() => logout().then(() => router.push('/'))}>
+          <button type="button" className="round-btn" aria-label={tr("Keluar")} onClick={() => logout().then(() => router.push('/'))}>
             <LogOut size={21} />
           </button>
         )}
@@ -304,46 +306,46 @@ export default function ProfileView({ uid }: { uid: string }) {
         {own ? (
           <button type="button" className="pill-btn profile-edit" style={{ height: 44, padding: '0 20px', fontSize: 15 }} onClick={openEdit}>
             <Pencil size={17} />
-            Edit profil
+            {tr("Edit profil")}
           </button>
         ) : (
           <button type="button" className={`pf-follow${isFollowing ? ' on' : ''}`} onClick={toggleFollow}>
-            {isFollowing ? 'Mengikuti' : 'Ikuti'}
+            {isFollowing ? 'Mengikuti' : tr('Ikuti')}
           </button>
         )}
 
         <h1 className="profile-name">{nm}</h1>
         <div className="pf-badges">
           <span className="pf-badge">Lv.{computeLevelInfo(data.levelPoints || 0).level}</span>
-          <span className="pf-badge">{data.roleOverride || roleFor(cc)}</span>
+          <span className="pf-badge">{tr(data.roleOverride || roleFor(cc))}</span>
         </div>
-        <p className="profile-bio">{data.bio?.trim() ? data.bio : own ? 'Belum ada bio. Ketuk Edit profil untuk menambahkannya.' : 'Belum ada bio.'}</p>
+        <p className="profile-bio">{data.bio?.trim() ? data.bio : own ? 'Belum ada bio. Ketuk Edit profil untuk menambahkannya.' : tr('Belum ada bio.')}</p>
 
         <div className="pf-stats">
           <div className="pf-stat">
             <b>{followers}</b>
-            <span>Pengikut</span>
+            <span>{tr("Pengikut")}</span>
           </div>
           <div className="pf-stat">
             <b>{following}</b>
-            <span>Mengikuti</span>
+            <span>{tr("Mengikuti")}</span>
           </div>
           <div className="pf-stat">
             <b>{cc}</b>
-            <span>Komentar</span>
+            <span>{tr("Komentar")}</span>
           </div>
         </div>
 
         <div className="block-head">
-          <h3>Lagu favorit</h3>
+          <h3>{tr("Lagu favorit")}</h3>
           {own && (
             <button type="button" className="mini-pill" onClick={openFav}>
-              Atur
+              {tr("Atur")}
             </button>
           )}
         </div>
         {favSongs.length === 0 ? (
-          <div className="dashed">{own ? 'Belum ada lagu favorit. Ketuk Atur untuk memilih dari Lagu Disukai.' : 'Belum ada lagu favorit.'}</div>
+          <div className="dashed">{own ? 'Belum ada lagu favorit. Ketuk Atur untuk memilih dari Lagu Disukai.' : tr('Belum ada lagu favorit.')}</div>
         ) : (
           <div className="track-list">
             {favSongs.map((t, i) => (
@@ -353,15 +355,15 @@ export default function ProfileView({ uid }: { uid: string }) {
         )}
 
         <div className="block-head">
-          <h3>Playlist</h3>
+          <h3>{tr("Playlist")}</h3>
           {own && (
             <button type="button" className="mini-pill" onClick={openPl}>
-              Atur
+              {tr("Atur")}
             </button>
           )}
         </div>
         {shown.length === 0 ? (
-          <div className="dashed">{own ? 'Belum ada playlist yang ditampilkan. Ketuk Atur untuk memilih dari Library-mu.' : 'Belum ada playlist yang ditampilkan.'}</div>
+          <div className="dashed">{own ? 'Belum ada playlist yang ditampilkan. Ketuk Atur untuk memilih dari Library-mu.' : tr('Belum ada playlist yang ditampilkan.')}</div>
         ) : (
           shown.map((p) => (
             <div key={p.name} className="pf-pick" style={{ cursor: 'default' }}>
@@ -377,7 +379,7 @@ export default function ProfileView({ uid }: { uid: string }) {
                   {p.name}
                 </span>
                 <span className="row-sub" style={{ display: 'block', fontSize: 12 }}>
-                  {p.count} lagu
+                  {tr('{n} lagu', { n: p.count })}
                 </span>
               </span>
             </div>
@@ -385,32 +387,32 @@ export default function ProfileView({ uid }: { uid: string }) {
         )}
 
         <div className="block-head">
-          <h3>Galeri</h3>
+          <h3>{tr("Galeri")}</h3>
         </div>
         <div className="pf-gal">
           {gallery.map((g, i) => (
             <div key={i} className="pf-gal-item">
               <img src={g} alt="" />
               {own && (
-                <button type="button" className="pf-gal-x" onClick={() => removeGallery(g)} aria-label="Hapus foto">
+                <button type="button" className="pf-gal-x" onClick={() => removeGallery(g)} aria-label={tr("Hapus foto")}>
                   <X size={14} />
                 </button>
               )}
             </div>
           ))}
           {own && gallery.length < 6 && (
-            <button type="button" className="pf-gal-add" onClick={() => galRef.current?.click()} aria-label="Tambah foto">
+            <button type="button" className="pf-gal-add" onClick={() => galRef.current?.click()} aria-label={tr("Tambah foto")}>
               <Plus size={26} />
             </button>
           )}
         </div>
-        {!own && gallery.length === 0 && <div className="dashed">Belum ada foto.</div>}
+        {!own && gallery.length === 0 && <div className="dashed">{tr("Belum ada foto.")}</div>}
 
         <div className="block-head">
-          <h3>Aktivitas</h3>
+          <h3>{tr("Aktivitas")}</h3>
         </div>
-        {acts === null && <div className="dashed">Memuat aktivitas...</div>}
-        {acts && acts.length === 0 && <div className="dashed">💬 Belum ada aktivitas.</div>}
+        {acts === null && <div className="dashed">{tr("Memuat aktivitas...")}</div>}
+        {acts && acts.length === 0 && <div className="dashed">{tr("💬 Belum ada aktivitas.")}</div>}
         {acts?.map((a) => (
           <div key={a.id} className="pf-act">
             <span>💬</span>
@@ -430,29 +432,29 @@ export default function ProfileView({ uid }: { uid: string }) {
         <div className="sheet-grip" />
         {sheet === 'edit' && (
           <>
-            <h3>Edit profil</h3>
+            <h3>{tr("Edit profil")}</h3>
             <label className="pf-field">
-              <span>Nama</span>
+              <span>{tr("Nama")}</span>
               <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
             </label>
             <label className="pf-field">
-              <span>Bio</span>
+              <span>{tr("Bio")}</span>
               <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} />
             </label>
             <button type="button" className="pf-sheet-btn ghost" onClick={() => avRef.current?.click()}>
-              Ganti foto profil
+              {tr("Ganti foto profil")}
             </button>
             <button type="button" className="pf-sheet-btn" onClick={saveEdit} disabled={busy}>
-              {busy ? 'Menyimpan...' : 'Simpan'}
+              {busy ? 'Menyimpan...' : tr('Simpan')}
             </button>
           </>
         )}
         {sheet === 'fav' && (
           <>
-            <h3>Lagu favorit</h3>
-            <p>Pilih sampai 5 dari Lagu Disukai.</p>
+            <h3>{tr("Lagu favorit")}</h3>
+            <p>{tr("Pilih sampai 5 dari Lagu Disukai.")}</p>
             <div className="pf-list">
-              {liked.length === 0 && <p style={{ margin: 0, fontSize: 14 }}>Belum ada lagu disukai.</p>}
+              {liked.length === 0 && <p style={{ margin: 0, fontSize: 14 }}>{tr("Belum ada lagu disukai.")}</p>}
               {liked.map((t) => (
                 <button key={t.id} type="button" className={`pf-pick${pickFav.includes(t.id) ? ' on' : ''}`} onClick={() => toggle(pickFav, t.id, setPickFav)}>
                   <TrackThumb track={t} className="thumb" />
@@ -469,16 +471,16 @@ export default function ProfileView({ uid }: { uid: string }) {
               ))}
             </div>
             <button type="button" className="pf-sheet-btn" onClick={saveFav} disabled={busy}>
-              {busy ? 'Menyimpan...' : 'Simpan'}
+              {busy ? 'Menyimpan...' : tr('Simpan')}
             </button>
           </>
         )}
         {sheet === 'pl' && (
           <>
-            <h3>Playlist</h3>
-            <p>Pilih sampai 5 playlist untuk ditampilkan.</p>
+            <h3>{tr("Playlist")}</h3>
+            <p>{tr("Pilih sampai 5 playlist untuk ditampilkan.")}</p>
             <div className="pf-list">
-              {playlists.length === 0 && <p style={{ margin: 0, fontSize: 14 }}>Belum ada playlist di Library.</p>}
+              {playlists.length === 0 && <p style={{ margin: 0, fontSize: 14 }}>{tr("Belum ada playlist di Library.")}</p>}
               {playlists.map((p) => (
                 <button key={p.id} type="button" className={`pf-pick${pickPl.includes(p.name) ? ' on' : ''}`} onClick={() => toggle(pickPl, p.name, setPickPl)}>
                   {p.tracks[0] ? (
@@ -493,7 +495,7 @@ export default function ProfileView({ uid }: { uid: string }) {
                       {p.name}
                     </span>
                     <span className="row-sub" style={{ display: 'block', fontSize: 12 }}>
-                      {p.tracks.length} lagu
+                      {tr('{n} lagu', { n: p.tracks.length })}
                     </span>
                   </span>
                   {pickPl.includes(p.name) && <Check size={18} color="var(--accent)" />}
@@ -501,7 +503,7 @@ export default function ProfileView({ uid }: { uid: string }) {
               ))}
             </div>
             <button type="button" className="pf-sheet-btn" onClick={savePl} disabled={busy}>
-              {busy ? 'Menyimpan...' : 'Simpan'}
+              {busy ? 'Menyimpan...' : tr('Simpan')}
             </button>
           </>
         )}
