@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { Check, ListMusic } from 'lucide-react';
 import { useExtras } from './Extras';
 import TrackThumb from './TrackThumb';
+import { useI18n } from '@/components/I18nProvider';
 
 export default function PlaylistSheet() {
+  const { t: tr } = useI18n();
   const { pickerTrack, closePicker, playlists, addToPlaylist, createPlaylist } = useExtras();
   const [name, setName] = useState('');
   const open = !!pickerTrack;
@@ -22,11 +24,11 @@ export default function PlaylistSheet() {
       <div className={`sheet-backdrop${open ? ' open' : ''}`} onClick={closePicker} />
       <section className={`sheet glass${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-hidden={!open}>
         <div className="sheet-grip" />
-        <h3>Simpan ke playlist</h3>
+        <h3>{tr("Simpan ke playlist")}</h3>
         <p>{pickerTrack ? pickerTrack.title : ''}</p>
 
         <div className="pl-list">
-          {playlists.length === 0 && <p style={{ margin: '0 0 10px', fontSize: 15 }}>Belum ada playlist. Buat yang pertama di bawah.</p>}
+          {playlists.length === 0 && <p style={{ margin: '0 0 10px', fontSize: 15 }}>{tr("Belum ada playlist. Buat yang pertama di bawah.")}</p>}
           {playlists.map((p) => {
             const has = !!pickerTrack && p.tracks.some((x) => x.id === pickerTrack.id);
             return (
@@ -51,7 +53,7 @@ export default function PlaylistSheet() {
                     {p.name}
                   </span>
                   <span className="row-sub" style={{ display: 'block', fontSize: 13 }}>
-                    {p.tracks.length} lagu
+                    {tr('{n} lagu', { n: p.tracks.length })}
                   </span>
                 </span>
                 {has ? <Check size={20} color="var(--accent)" /> : null}
@@ -61,9 +63,9 @@ export default function PlaylistSheet() {
         </div>
 
         <div className="pl-form">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama playlist baru" onKeyDown={(e) => e.key === 'Enter' && create()} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("Nama playlist baru")} onKeyDown={(e) => e.key === 'Enter' && create()} />
           <button type="button" onClick={create}>
-            Buat
+            {tr("Buat")}
           </button>
         </div>
       </section>
