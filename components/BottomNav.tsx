@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { House, Library, MessageCircle, Palette, Search, Settings, User } from 'lucide-react';
 import { useTheme } from './Providers';
+import { useI18n } from '@/components/I18nProvider';
 
 const LEFT = [
   { href: '/', label: 'Beranda', Icon: House },
@@ -18,13 +19,14 @@ const RIGHT = [
 ];
 
 export default function BottomNav() {
+  const { t: tr } = useI18n();
   const path = usePathname();
   const { openSheet } = useTheme();
 
   const item = ({ href, label, Icon }: (typeof LEFT)[number]) => {
     const active = href === '/' ? path === '/' : path.startsWith(href);
     return (
-      <Link key={href} href={href} aria-label={label} className={`nav-item${active ? ' active' : ''}`}>
+      <Link key={href} href={href} aria-label={tr(label)} className={`nav-item${active ? ' active' : ''}`}>
         <span className="bubble">
           <Icon size={22} strokeWidth={2} />
         </span>
@@ -33,12 +35,12 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="nav glass" aria-label="Navigasi utama">
+    <nav className="nav glass" aria-label={tr("Navigasi utama")}>
       {LEFT.map(item)}
       <div aria-hidden="true" />
       {RIGHT.map(item)}
       <div className="nav-fab">
-        <button type="button" onClick={openSheet} aria-label="Pilih tema">
+        <button type="button" onClick={openSheet} aria-label={tr("Pilih tema")}>
           <Palette size={26} strokeWidth={2} />
         </button>
       </div>
