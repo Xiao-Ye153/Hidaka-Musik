@@ -31,6 +31,7 @@ import {
   type CloudArtist
 } from '@/lib/cloud';
 import { fbApp } from '@/lib/firebase';
+import { tNow } from '@/lib/i18n';
 import type { Profile } from '@/lib/profile';
 import { useExtras } from './Extras';
 import { usePlayer } from './Providers';
@@ -83,7 +84,7 @@ function message(e: unknown) {
     'auth/quota-exceeded': 'Kuota SMS habis. Coba cara lain.',
     'auth/operation-not-allowed': 'Metode login ini belum diaktifkan di Firebase.'
   };
-  return map[code] || 'Terjadi kesalahan. Coba lagi.';
+  return tNow(map[code] || 'Terjadi kesalahan. Coba lagi.');
 }
 
 function normalizePhone(raw: string) {
