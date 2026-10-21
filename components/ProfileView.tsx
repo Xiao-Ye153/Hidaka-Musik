@@ -24,6 +24,7 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
+import { getDownloadURL, getStorage, ref as sref, uploadBytes } from 'firebase/storage';
 import { fbApp } from '@/lib/firebase';
 import { resizeImage, type FavSong, type Profile, type ShownPl } from '@/lib/profile';
 import { roleFor, timeAgo } from '@/lib/roles';
@@ -61,6 +62,7 @@ export default function ProfileView({ uid }: { uid: string }) {
   const [toast, setToast] = useState('');
   const avRef = useRef<HTMLInputElement | null>(null);
   const galRef = useRef<HTMLInputElement | null>(null);
+  const bnRef = useRef<HTMLInputElement | null>(null);
 
   const db = () => getFirestore(fbApp());
   const flash = (m: string) => setToast(m);
@@ -191,6 +193,51 @@ export default function ProfileView({ uid }: { uid: string }) {
     }
   };
 
+  const onBanner = async (f: File | undefined) => {
+    if (!f || !user) return;
+    const isVideo = f.type.startsWith('video/');
+    if (!isVideo && !f.type.startsWith('image/')) return flash(tr('File harus gambar atau video'));
+    if (isVideo && f.size > 25 * 1024 * 1024) return flash(tr('Video maksimal 25 MB'));
+    setBusy(true);
+    flash(tr('Mengunggah latar...'));
+    try {
+      let blob: Blob = f;
+      let dataUrl = '';
+      if (!isVideo) {
+        dataUrl = await resizeImage(f, 1000, 0.75);
+        blob = await (await fetch(dataUrl)).blob();
+      }
+      const ext = isVideo ? (f.name.split('.').pop() || 'mp4').toLowerCase() : 'jpg';
+      const path = `banners/${user.uid}/banner-${Date.now()}.${ext}`;
+      let url = '';
+      try {
+        const r = sref(getStorage(fbApp()), path);
+        await uploadBytes(r, blob, { contentType: isVideo ? f.type || 'video/mp4' : 'image/jpeg' });
+        url = await getDownloadURL(r);
+      } catch (e) {
+        if (isVideo) throw e;
+        url = dataUrl;
+      }
+      await setDoc(doc(db(), 'user_profiles', user.uid), { bannerURL: url, bannerType: isVideo ? 'video' : 'image' }, { merge: true });
+      await reload();
+      flash(tr('Latar profil diperbarui'));
+    } catch {
+      flash(tr('Gagal mengunggah latar. Pastikan Firebase Storage aktif.'));
+    }
+    setBusy(false);
+  };
+
+  const removeBanner = async () => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db(), 'user_profiles', user.uid), { bannerURL: '', bannerType: '' }, { merge: true });
+      await reload();
+      flash(tr('Latar profil dihapus'));
+    } catch {
+      flash(tr('Gagal menyimpan'));
+    }
+  };
+
   const onGallery = async (f: File | undefined) => {
     if (!f || !user) return;
     if ((data?.gallery?.length || 0) >= 6) return flash(tr("Galeri maksimal 6 foto"));
@@ -286,7 +333,15 @@ export default function ProfileView({ uid }: { uid: string }) {
 
   return (
     <>
-      <div className="profile-hero" />
+      <div className="profile-hero">
+        {data.bannerURL ? (
+          data.bannerType === 'video' ? (
+            <video src={data.bannerURL} autoPlay muted loop playsInline />
+          ) : (
+            <img src={data.bannerURL} alt="" />
+          )
+        ) : null}
+      </div>
       <div className="profile-actions">
         <button type="button" className="round-btn" aria-label={tr("Bagikan")} onClick={share}>
           <Share2 size={21} />
@@ -425,6 +480,7 @@ export default function ProfileView({ uid }: { uid: string }) {
       </section>
 
       <input ref={avRef} type="file" accept="image/*" hidden onChange={(e) => { onAvatar(e.target.files?.[0]); e.target.value = ''; }} />
+      <input ref={bnRef} type="file" accept="image/*,video/*" hidden onChange={(e) => { onBanner(e.target.files?.[0]); e.target.value = ''; }} />
       <input ref={galRef} type="file" accept="image/*" hidden onChange={(e) => { onGallery(e.target.files?.[0]); e.target.value = ''; }} />
 
       <div className={`sheet-backdrop${sheet !== 'none' ? ' open' : ''}`} onClick={() => setSheet('none')} />
@@ -441,6 +497,14 @@ export default function ProfileView({ uid }: { uid: string }) {
               <span>{tr("Bio")}</span>
               <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} />
             </label>
+            <button type="button" className="pf-sheet-btn ghost" onClick={() => bnRef.current?.click()} disabled={busy}>
+              {tr('Ganti latar profil (foto/video)')}
+            </button>
+            {data.bannerURL ? (
+              <button type="button" className="pf-sheet-btn ghost" onClick={removeBanner}>
+                {tr('Hapus latar profil')}
+              </button>
+            ) : null}
             <button type="button" className="pf-sheet-btn ghost" onClick={() => avRef.current?.click()}>
               {tr("Ganti foto profil")}
             </button>
