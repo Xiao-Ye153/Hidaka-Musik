@@ -13,6 +13,8 @@ export type Profile = {
   favSongs?: FavSong[];
   shownPlaylists?: ShownPl[];
   gallery?: string[];
+  bannerURL?: string;
+  bannerType?: string;
 };
 
 export function resizeImage(file: File, max: number, quality = 0.7, square = false): Promise<string> {
