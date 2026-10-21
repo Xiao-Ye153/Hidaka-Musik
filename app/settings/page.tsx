@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bell, ChevronRight, Coffee, Download, Heart, History, LayoutList, LogOut, Link2, MessageCircle, Mic2, Monitor, Palette, User } from 'lucide-react';
-import { APP } from '@/lib/config';
+import { ADMIN_UIDS, APP } from '@/lib/config';
 import { LANGS } from '@/lib/i18n';
 import { THEMES } from '@/lib/themes';
 import { useAuth } from '@/components/AuthProvider';
@@ -141,6 +141,17 @@ export default function SettingsPage() {
             {tr('{a} / {b} poin · +5 poin tiap 10 menit mendengarkan', { a: Math.floor(level.into), b: level.need })}
           </p>
         </section>
+      ) : null}
+
+      {user && ADMIN_UIDS.includes(user.uid) ? (
+        <Link href="/admin" className="list-row glass-soft" style={{ marginBottom: 14 }}>
+          <span className="ico">🔐</span>
+          <span>
+            <b>Admin Panel</b>
+            <small>Kelola pengguna, level, dan peringkat</small>
+          </span>
+          <ChevronRight className="chev" size={22} />
+        </Link>
       ) : null}
 
       <button type="button" className="list-row glass-soft" onClick={askNotif}>
