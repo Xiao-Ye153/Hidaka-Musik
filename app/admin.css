@@ -1,0 +1,145 @@
+.ad-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ad-stat {
+  padding: 14px 6px;
+  border-radius: 16px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.ad-stat b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.ad-stat span {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.ad-search {
+  width: 100%;
+  height: 48px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border-radius: 24px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  outline: 0;
+}
+
+.ad-user {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.ad-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ad-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ad-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-uid {
+  margin-top: 2px;
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.ad-coin {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fbbf24;
+  background: var(--surface2);
+}
+
+.ad-forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.ad-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.ad-form input,
+.ad-form select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  outline: 0;
+}
+
+.ad-form input[type='number'] {
+  width: 68px;
+  text-align: center;
+}
+
+.ad-form button {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+.ad-note {
+  padding: 28px 8px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text2);
+}
