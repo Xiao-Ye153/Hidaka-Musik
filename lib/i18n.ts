@@ -314,6 +314,14 @@ export const DICT: Record<string, Entry> = {
   'Semua lagu {n}': { en: 'All songs by {n}', ru: 'Все песни {n}' },
   'Semua playlist {n}': { en: 'All playlists by {n}', ru: 'Все плейлисты {n}' },
   'Pilih bahasa aplikasi': { en: 'Choose the app language', ru: 'Выберите язык приложения' },
+  'File harus gambar atau video': { en: 'The file must be an image or a video', ru: 'Файл должен быть изображением или видео' },
+  'Video maksimal 25 MB': { en: 'Video must be 25 MB or less', ru: 'Видео — не более 25 МБ' },
+  'Mengunggah latar...': { en: 'Uploading background...', ru: 'Загрузка фона...' },
+  'Latar profil diperbarui': { en: 'Profile background updated', ru: 'Фон профиля обновлён' },
+  'Gagal mengunggah latar. Pastikan Firebase Storage aktif.': { en: 'Failed to upload the background. Make sure Firebase Storage is enabled.', ru: 'Не удалось загрузить фон. Убедитесь, что Firebase Storage включён.' },
+  'Latar profil dihapus': { en: 'Profile background removed', ru: 'Фон профиля удалён' },
+  'Ganti latar profil (foto/video)': { en: 'Change profile background (photo/video)', ru: 'Сменить фон профиля (фото/видео)' },
+  'Hapus latar profil': { en: 'Remove profile background', ru: 'Удалить фон профиля' },
   '🔥 Trending Sekarang': { en: '🔥 Trending Now', ru: '🔥 В тренде сейчас' }
 };
 
