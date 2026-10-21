@@ -10,3 +10,5 @@ export const APP = {
   developer: 'Hidaka',
   defaultUser: 'tamu'
 };
+
+export const ADMIN_UIDS = ['u2esJwWa3wZbzrH3td3mAN5bmdH2', 'H3ZU9kpUwhVbTsFuajMnzC2fv033'];
