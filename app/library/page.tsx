@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Download, Heart, ListMusic, Search, User } from 'lucide-react';
 import { useExtras } from '@/components/Extras';
+import ArtistAvatar from '@/components/ArtistAvatar';
 import TrackRow from '@/components/TrackRow';
 import TrackThumb from '@/components/TrackThumb';
 import { usePlayer } from '@/components/Providers';
@@ -104,9 +105,7 @@ export default function LibraryPage() {
         <div className="track-list" style={{ marginTop: 22 }}>
           {artists.map((a) => (
             <Link key={a} href={`/artist?name=${encodeURIComponent(a)}`} className="row glass-soft">
-              <span className="avatar" style={{ width: 52, height: 52, fontSize: 20 }}>
-                {a.charAt(0).toUpperCase()}
-              </span>
+              <ArtistAvatar name={a} />
               <span className="row-body">
                 <span className="row-title" style={{ display: 'block' }}>
                   {a}
