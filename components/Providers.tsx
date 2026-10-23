@@ -58,6 +58,11 @@ const ProgressContext = createContext<ProgressCtx>({ time: 0, duration: 0 });
 
 const urlCache = new Map<string, { url: string; at: number }>();
 
+function peekUrl(id: string): string | null {
+  const hit = urlCache.get(id);
+  return hit && Date.now() - hit.at < 4 * 60 * 1000 ? hit.url : null;
+}
+
 async function resolveUrl(id: string): Promise<string> {
   const hit = urlCache.get(id);
   if (hit && Date.now() - hit.at < 4 * 60 * 1000) return hit.url;
@@ -121,6 +126,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const engineRef = useRef<'audio' | 'yt'>('audio');
   const reqRef = useRef(0);
+  const prefetchedRef = useRef('');
   const ensureYTRef = useRef<() => void>(() => {});
   const stepRef = useRef<(dir: 1 | -1, auto: boolean) => void>(() => {});
   const fallbackRef = useRef<(t: Track) => void>(() => {});
@@ -224,22 +230,31 @@ export default function Providers({ children }: { children: ReactNode }) {
         fallbackYT(t);
         return;
       }
-      a.pause();
+      const onFail = (e: { name?: string }) => {
+        if (rid !== reqRef.current) return;
+        if (e?.name === 'NotAllowedError') {
+          setBuffering(false);
+          setPlaying(false);
+          return;
+        }
+        fallbackYT(t);
+      };
+      // Jalur sinkron: URL sudah di-prefetch, langsung play tanpa fetch.
+      // Penting di latar belakang: browser mem-freeze tab yang sunyi + menunggu async.
+      const cached = peekUrl(t.id);
+      if (cached) {
+        a.src = cached;
+        a.play().catch(onFail);
+        return;
+      }
+      if (!document.hidden) a.pause();
       resolveUrl(t.id)
         .then((url) => {
           if (rid !== reqRef.current) return;
           a.src = url;
           return a.play();
         })
-        .catch((e: { name?: string }) => {
-          if (rid !== reqRef.current) return;
-          if (e?.name === 'NotAllowedError') {
-            setBuffering(false);
-            setPlaying(false);
-            return;
-          }
-          fallbackYT(t);
-        });
+        .catch(onFail);
     },
     [pushRecent, fallbackYT]
   );
@@ -296,6 +311,9 @@ export default function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     const a = new Audio();
     a.preload = 'auto';
+    a.setAttribute('playsinline', '');
+    a.style.display = 'none';
+    document.body.appendChild(a);
     audioRef.current = a;
     const onPlaying = () => {
       if (engineRef.current !== 'audio') return;
@@ -313,7 +331,21 @@ export default function Providers({ children }: { children: ReactNode }) {
       if (engineRef.current === 'audio') setBuffering(false);
     };
     const onTime = () => {
-      if (engineRef.current === 'audio') setTime(a.currentTime);
+      if (engineRef.current !== 'audio') return;
+      setTime(a.currentTime);
+      // Prefetch lagu berikutnya ~45 detik sebelum habis supaya link masih segar
+      if (isFinite(a.duration) && a.duration - a.currentTime < 45) {
+        const q = queueRef.current;
+        const c = currentRef.current;
+        if (!c || prefetchedRef.current === c.id) return;
+        const n = q[q.findIndex((x) => x.id === c.id) + 1];
+        if (n) {
+          prefetchedRef.current = c.id;
+          resolveUrl(n.id).catch(() => {
+            prefetchedRef.current = '';
+          });
+        }
+      }
     };
     const onMeta = () => {
       if (engineRef.current === 'audio' && isFinite(a.duration)) setDuration(a.duration);
@@ -352,6 +384,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       a.removeEventListener('ended', onEnded);
       a.removeEventListener('error', onError);
       a.pause();
+      a.remove();
     };
   }, []);
 
@@ -425,18 +458,6 @@ export default function Providers({ children }: { children: ReactNode }) {
     }, 500);
     return () => clearInterval(id);
   }, [playing, engine]);
-
-  useEffect(() => {
-    if (!current) return;
-    const q = queueRef.current;
-    const i = q.findIndex((x) => x.id === current.id);
-    const n = q[i + 1];
-    if (!n) return;
-    const id = setTimeout(() => {
-      resolveUrl(n.id).catch(() => {});
-    }, 4000);
-    return () => clearTimeout(id);
-  }, [current]);
 
   const toggle = useCallback(() => {
     if (engineRef.current === 'audio') {
@@ -516,6 +537,13 @@ export default function Providers({ children }: { children: ReactNode }) {
       });
     } catch {}
   }, [current]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+    } catch {}
+  }, [playing]);
 
   const themeValue = useMemo<ThemeCtx>(
     () => ({
