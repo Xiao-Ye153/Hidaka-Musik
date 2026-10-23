@@ -250,19 +250,16 @@ function FullBody({ track }: { track: Track }) {
     return () => clearTimeout(id);
   }, [note]);
 
-  const download = async () => {
+  const download = () => {
     if (dlBusy) return;
     setDlBusy(true);
-    try {
-      const r = await fetch(`/api/audio?id=${encodeURIComponent(track.id)}&q=128`);
-      const d = await r.json();
-      if (!d?.url) throw new Error('kosong');
-      window.open(d.url, '_blank', 'noopener');
-      setNote(tr("Unduhan dibuka di tab baru"));
-    } catch {
-      setNote(tr("Gagal mengambil link unduhan"));
-    }
-    setDlBusy(false);
+    window.open(
+      `/api/stream?id=${encodeURIComponent(track.id)}&q=128&dl=1&name=${encodeURIComponent(track.title)}`,
+      '_blank',
+      'noopener'
+    );
+    setNote(tr("Unduhan dibuka di tab baru"));
+    setTimeout(() => setDlBusy(false), 1500);
   };
 
   const cycleSleep = () => {
