@@ -23,23 +23,39 @@ export async function GET(req: Request) {
 
   try {
     const { url } = await resolveAudio(id, quality);
-    const headers: Record<string, string> = {
-      'User-Agent': UA,
-      Referer: 'https://yt.savetube.me/',
-      Origin: 'https://yt.savetube.me',
-      Accept: '*/*'
-    };
+    const DESKTOP_UA =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+    const variants: Record<string, string>[] = [
+      { 'User-Agent': UA, Referer: 'https://ytshorts.savetube.me/', Origin: 'https://ytshorts.savetube.me' },
+      { 'User-Agent': UA, Referer: 'https://yt.savetube.me/', Origin: 'https://yt.savetube.me' },
+      { 'User-Agent': UA },
+      { 'User-Agent': DESKTOP_UA }
+    ];
     const range = req.headers.get('range');
-    if (range) headers.Range = range;
+    const notes: string[] = [];
+    let up: Response | null = null;
+    let type = '';
 
-    const up = await fetch(url, { headers, redirect: 'follow', cache: 'no-store' });
-    const type = up.headers.get('content-type') || '';
+    for (let i = 0; i < variants.length; i++) {
+      const headers: Record<string, string> = { Accept: '*/*', ...variants[i] };
+      if (range) headers.Range = range;
+      try {
+        const r = await fetch(url, { headers, redirect: 'follow', cache: 'no-store' });
+        const t = r.headers.get('content-type') || '';
+        if (r.ok && r.body && !/text\/html|application\/json/i.test(t)) {
+          up = r;
+          type = t;
+          break;
+        }
+        notes.push(`v${i}: ${r.status} ${t || '-'} ${new URL(r.url).host}`);
+        await r.body?.cancel();
+      } catch (e) {
+        notes.push(`v${i}: ${describeError(e)}`);
+      }
+    }
 
-    if (!up.ok || !up.body || /text\/html|application\/json/i.test(type)) {
-      return NextResponse.json(
-        { error: `CDN menolak (status ${up.status}, tipe ${type || '-'}, akhir ${new URL(up.url).host})` },
-        { status: 502 }
-      );
+    if (!up) {
+      return NextResponse.json({ error: `CDN menolak semua variasi header | ${notes.join(' | ')}` }, { status: 502 });
     }
 
     const out = new Headers();
