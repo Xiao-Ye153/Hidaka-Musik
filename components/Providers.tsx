@@ -57,33 +57,7 @@ const ThemeContext = createContext<ThemeCtx | null>(null);
 const PlayerContext = createContext<PlayerCtx | null>(null);
 const ProgressContext = createContext<ProgressCtx>({ time: 0, duration: 0 });
 
-const urlCache = new Map<string, { url: string; at: number }>();
-
-function peekUrl(id: string): string | null {
-  const hit = urlCache.get(id);
-  return hit && Date.now() - hit.at < 4 * 60 * 1000 ? hit.url : null;
-}
-
-async function resolveUrl(id: string): Promise<string> {
-  const hit = urlCache.get(id);
-  if (hit && Date.now() - hit.at < 4 * 60 * 1000) return hit.url;
-  let lastErr: unknown = new Error('gagal');
-  for (let i = 0; i < 2; i++) {
-    try {
-      const r = await fetch(`/api/audio?id=${encodeURIComponent(id)}`);
-      const d = await r.json();
-      if (d?.url) {
-        urlCache.set(id, { url: d.url, at: Date.now() });
-        return d.url as string;
-      }
-      lastErr = new Error(d?.error || 'tanpa link');
-    } catch (e) {
-      lastErr = e;
-    }
-    await new Promise((res) => setTimeout(res, 500));
-  }
-  throw lastErr;
-}
+const streamUrl = (id: string) => `/api/stream?id=${encodeURIComponent(id)}`;
 
 const LIKED_KEY = 'nada_liked';
 const RECENT_KEY = 'hm_recent';
@@ -127,7 +101,6 @@ export default function Providers({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const engineRef = useRef<'audio' | 'yt'>('audio');
   const reqRef = useRef(0);
-  const prefetchedRef = useRef('');
   const ensureYTRef = useRef<() => void>(() => {});
   const stepRef = useRef<(dir: 1 | -1, auto: boolean) => void>(() => {});
   const fallbackRef = useRef<(t: Track, why: string) => void>(() => {});
@@ -234,32 +207,19 @@ export default function Providers({ children }: { children: ReactNode }) {
         fallbackYT(t, 'elemen audio tidak ada');
         return;
       }
-      const onFail = (e: { name?: string }) => {
-        if (rid !== reqRef.current) return;
+      const onFail = (e: { name?: string; message?: string }) => {
+        if (rid !== reqRef.current || engineRef.current !== 'audio') return;
         if (e?.name === 'NotAllowedError') {
           setBuffering(false);
           setPlaying(false);
           return;
         }
-        const m = (e as { message?: string })?.message;
-        fallbackYT(t, `${e?.name || 'Error'}: ${m || 'gagal memuat audio'}`);
+        fallbackYT(t, `${e?.name || 'Error'}: ${e?.message || 'gagal memuat audio'}`);
       };
-      // Jalur sinkron: URL sudah di-prefetch, langsung play tanpa fetch.
-      // Penting di latar belakang: browser mem-freeze tab yang sunyi + menunggu async.
-      const cached = peekUrl(t.id);
-      if (cached) {
-        a.src = cached;
-        a.play().catch(onFail);
-        return;
-      }
-      if (!document.hidden) a.pause();
-      resolveUrl(t.id)
-        .then((url) => {
-          if (rid !== reqRef.current) return;
-          a.src = url;
-          return a.play();
-        })
-        .catch(onFail);
+      // src diganti secara sinkron (server yang resolve link), jadi tidak ada fetch
+      // async di tengah pergantian lagu. Aman untuk background play.
+      a.src = streamUrl(t.id);
+      a.play().catch(onFail);
     },
     [pushRecent, fallbackYT]
   );
@@ -338,19 +298,6 @@ export default function Providers({ children }: { children: ReactNode }) {
     const onTime = () => {
       if (engineRef.current !== 'audio') return;
       setTime(a.currentTime);
-      // Prefetch lagu berikutnya ~45 detik sebelum habis supaya link masih segar
-      if (isFinite(a.duration) && a.duration - a.currentTime < 45) {
-        const q = queueRef.current;
-        const c = currentRef.current;
-        if (!c || prefetchedRef.current === c.id) return;
-        const n = q[q.findIndex((x) => x.id === c.id) + 1];
-        if (n) {
-          prefetchedRef.current = c.id;
-          resolveUrl(n.id).catch(() => {
-            prefetchedRef.current = '';
-          });
-        }
-      }
     };
     const onMeta = () => {
       if (engineRef.current === 'audio' && isFinite(a.duration)) setDuration(a.duration);
