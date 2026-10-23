@@ -34,6 +34,7 @@ type PlayerCtx = {
   playing: boolean;
   buffering: boolean;
   engine: 'audio' | 'yt';
+  engineNote: string;
   repeat: boolean;
   liked: Track[];
   recent: Track[];
@@ -129,8 +130,9 @@ export default function Providers({ children }: { children: ReactNode }) {
   const prefetchedRef = useRef('');
   const ensureYTRef = useRef<() => void>(() => {});
   const stepRef = useRef<(dir: 1 | -1, auto: boolean) => void>(() => {});
-  const fallbackRef = useRef<(t: Track) => void>(() => {});
+  const fallbackRef = useRef<(t: Track, why: string) => void>(() => {});
   const [engine, setEngine] = useState<'audio' | 'yt'>('audio');
+  const [engineNote, setEngineNote] = useState('');
 
   useEffect(() => {
     const saved = document.documentElement.getAttribute('data-theme') as ThemeId | null;
@@ -191,9 +193,10 @@ export default function Providers({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const fallbackYT = useCallback((t: Track) => {
+  const fallbackYT = useCallback((t: Track, why: string) => {
     engineRef.current = 'yt';
     setEngine('yt');
+    setEngineNote(why);
     const a = audioRef.current;
     if (a) {
       a.pause();
@@ -219,6 +222,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       const rid = ++reqRef.current;
       engineRef.current = 'audio';
       setEngine('audio');
+      setEngineNote('');
       pendingRef.current = null;
       if (ytRef.current && readyRef.current) {
         try {
@@ -227,7 +231,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       }
       const a = audioRef.current;
       if (!a) {
-        fallbackYT(t);
+        fallbackYT(t, 'elemen audio tidak ada');
         return;
       }
       const onFail = (e: { name?: string }) => {
@@ -237,7 +241,8 @@ export default function Providers({ children }: { children: ReactNode }) {
           setPlaying(false);
           return;
         }
-        fallbackYT(t);
+        const m = (e as { message?: string })?.message;
+        fallbackYT(t, `${e?.name || 'Error'}: ${m || 'gagal memuat audio'}`);
       };
       // Jalur sinkron: URL sudah di-prefetch, langsung play tanpa fetch.
       // Penting di latar belakang: browser mem-freeze tab yang sunyi + menunggu async.
@@ -362,7 +367,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     const onError = () => {
       if (engineRef.current !== 'audio' || !a.getAttribute('src')) return;
       const t = currentRef.current;
-      if (t) fallbackRef.current(t);
+      if (t) fallbackRef.current(t, `audio error code ${a.error?.code ?? '?'} (${a.error?.message || 'tanpa pesan'})`);
     };
     a.addEventListener('playing', onPlaying);
     a.addEventListener('pause', onPause);
@@ -563,6 +568,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       playing,
       buffering,
       engine,
+      engineNote,
       repeat,
       liked,
       recent,
@@ -578,7 +584,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       seek,
       toggleRepeat
     }),
-    [current, queue, playing, buffering, engine, repeat, liked, recent, toggleLike, setLikedAll, setRecentAll, play, toggle, next, prev, close, seek, toggleRepeat]
+    [current, queue, playing, buffering, engine, engineNote, repeat, liked, recent, toggleLike, setLikedAll, setRecentAll, play, toggle, next, prev, close, seek, toggleRepeat]
   );
 
   const progressValue = useMemo<ProgressCtx>(() => ({ time, duration }), [time, duration]);
