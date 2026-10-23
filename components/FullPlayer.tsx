@@ -94,7 +94,7 @@ function Marquee({ text }: { text: string }) {
 
 function FullBody({ track }: { track: Track }) {
   const { t: tr, lang } = useI18n();
-  const { queue, playing, buffering, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
+  const { queue, playing, buffering, engine, engineNote, repeat, toggle, next, prev, seek, toggleRepeat, isLiked, toggleLike, play } =
     usePlayer();
   const { time, duration } = useProgress();
   const { closeFull, sleepEnd, setSleep, openPicker, openComments, isFollowing, toggleArtist } = useExtras();
@@ -291,6 +291,9 @@ function FullBody({ track }: { track: Track }) {
         <button type="button" className="full-ib" onClick={() => openPicker(track)} aria-label={tr("Simpan ke playlist")}>
           <ListPlus size={22} />
         </button>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 11, opacity: 0.75, padding: '0 16px 4px' }}>
+        {engine === 'audio' ? 'Mesin: audio (bisa di background)' : `Mesin: YouTube (mati di background) — ${engineNote}`}
       </div>
 
       <div className="full-scroll">
