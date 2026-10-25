@@ -8,6 +8,9 @@ type Resource = { type?: string; quality?: string; download_url?: string };
 
 const enc = new TextEncoder();
 
+// Versi TypeScript baru ketat soal tipe buffer; cast ini aman dan bekerja di semua versi.
+const bs = (u: Uint8Array) => u as unknown as BufferSource;
+
 function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -20,16 +23,16 @@ function b64ToBytes(b64: string): Uint8Array {
 async function aesCbcDecryptNoPad(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
   if (data.length === 0 || data.length % 16 !== 0) throw new Error('panjang data tidak valid');
   const subtle = crypto.subtle;
-  const kDec = await subtle.importKey('raw', key, 'AES-CBC', false, ['decrypt']);
-  const kEnc = await subtle.importKey('raw', key, 'AES-CBC', false, ['encrypt']);
+  const kDec = await subtle.importKey('raw', bs(key), 'AES-CBC', false, ['decrypt']);
+  const kEnc = await subtle.importKey('raw', bs(key), 'AES-CBC', false, ['encrypt']);
   const last = data.slice(data.length - 16);
   const p = new Uint8Array(16);
   for (let i = 0; i < 16; i++) p[i] = last[i] ^ 16;
-  const e = new Uint8Array(await subtle.encrypt({ name: 'AES-CBC', iv: new Uint8Array(16) }, kEnc, p)).slice(0, 16);
+  const e = new Uint8Array(await subtle.encrypt({ name: 'AES-CBC', iv: bs(new Uint8Array(16)) }, kEnc, bs(p))).slice(0, 16);
   const ext = new Uint8Array(data.length + 16);
   ext.set(data, 0);
   ext.set(e, data.length);
-  return new Uint8Array(await subtle.decrypt({ name: 'AES-CBC', iv }, kDec, ext));
+  return new Uint8Array(await subtle.decrypt({ name: 'AES-CBC', iv: bs(iv) }, kDec, bs(ext)));
 }
 
 async function decryptPayload(b64: string, auth: string): Promise<{ resources?: Resource[]; title?: string } | null> {
