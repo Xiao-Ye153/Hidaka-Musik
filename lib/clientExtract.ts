@@ -58,42 +58,57 @@ async function getAuth(): Promise<string> {
   return '4c9b7d21';
 }
 
-export async function resolveInBrowser(id: string): Promise<string> {
-  const auth = await getAuth();
+async function parseOnce(id: string, auth: string): Promise<{ ok: boolean; json: { status?: number; data?: unknown; msg?: string } | null; err?: string }> {
   const body = new URLSearchParams({
     hostname: 'vidssave.com',
     auth,
     domain: 'api-ak.vidssave.com',
     link: `https://www.youtube.com/watch?v=${id}`
   });
-
-  let res: Response;
   try {
-    res = await fetch('https://api.vidssave.com/api/contentsite_api/media/parse', {
+    const res = await fetch('https://api.vidssave.com/api/contentsite_api/media/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
       signal: AbortSignal.timeout(8000)
     });
+    if (!res.ok) return { ok: false, json: null, err: `HTTP ${res.status}` };
+    const json = await res.json();
+    return { ok: !!json && json.status === 1 && !!json.data, json };
   } catch (e) {
-    throw new Error(`panggilan browser gagal (${(e as Error)?.name === 'TimeoutError' ? 'timeout' : 'diblok/CORS'})`);
+    return { ok: false, json: null, err: (e as Error)?.name === 'TimeoutError' ? 'timeout' : 'diblok/CORS' };
   }
-  if (!res.ok) throw new Error(`vidssave HTTP ${res.status}`);
+}
 
-  const j = await res.json();
-  if (!j || j.status !== 1 || !j.data) throw new Error('vidssave menolak permintaan');
+export async function resolveInBrowser(id: string): Promise<string> {
+  const serverAuth = await getAuth();
+  const auths = Array.from(new Set([serverAuth, '4c9b7d21']));
 
-  const info = await decryptPayload(String(j.data), auth);
-  if (!info) throw new Error('gagal dekripsi');
-
-  const all = (info.resources || []).filter((r) => r.download_url);
-  const audio = all.filter((r) => r.type === 'audio');
-  const pool = audio.length ? audio : all;
-  if (!pool.length) throw new Error('tidak ada resource audio');
-  const rank = (q?: string) => {
-    const i = QUALITY_ORDER.indexOf(q || '');
-    return i === -1 ? 99 : i;
-  };
-  pool.sort((a, b) => rank(a.quality) - rank(b.quality));
-  return pool[0].download_url as string;
+  let last = '';
+  for (const auth of auths) {
+    const r = await parseOnce(id, auth);
+    if (!r.ok) {
+      last = r.err ? `${r.err} (auth ${auth})` : `ditolak ${JSON.stringify(r.json).slice(0, 90)} (auth ${auth})`;
+      continue;
+    }
+    const info = await decryptPayload(String((r.json as { data: unknown }).data), auth);
+    if (!info) {
+      last = `gagal dekripsi (auth ${auth})`;
+      continue;
+    }
+    const all = (info.resources || []).filter((x) => x.download_url);
+    const audio = all.filter((x) => x.type === 'audio');
+    const pool = audio.length ? audio : all;
+    if (!pool.length) {
+      last = 'tidak ada resource audio';
+      continue;
+    }
+    const rank = (q?: string) => {
+      const i = QUALITY_ORDER.indexOf(q || '');
+      return i === -1 ? 99 : i;
+    };
+    pool.sort((a, b) => rank(a.quality) - rank(b.quality));
+    return pool[0].download_url as string;
+  }
+  throw new Error(last || 'vidssave gagal');
 }
