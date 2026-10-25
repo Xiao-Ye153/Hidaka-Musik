@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
+import { resolveInBrowser } from '@/lib/clientExtract';
 import { THEME_KEY, type ThemeId } from '@/lib/themes';
 import type { Track } from '@/lib/tracks';
 
@@ -101,6 +102,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const engineRef = useRef<'audio' | 'yt'>('audio');
   const reqRef = useRef(0);
+  const bfRef = useRef<{ id: string; busy: boolean }>({ id: '', busy: false });
   const ensureYTRef = useRef<() => void>(() => {});
   const stepRef = useRef<(dir: 1 | -1, auto: boolean) => void>(() => {});
   const fallbackRef = useRef<(t: Track, why: string) => void>(() => {});
@@ -184,6 +186,43 @@ export default function Providers({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Gagal memuat audio dari server -> coba cadangan di browser sekali, baru jatuh ke YouTube.
+  const handleFail = useCallback(
+    (t: Track, why: string) => {
+      if (engineRef.current !== 'audio') return;
+      const a = audioRef.current;
+      if (!a) {
+        fallbackYT(t, why);
+        return;
+      }
+      if (bfRef.current.id === t.id) {
+        if (bfRef.current.busy) return; // kegagalan ganda dari event yang sama
+        fallbackYT(t, why);
+        return;
+      }
+      bfRef.current = { id: t.id, busy: true };
+      const rid = reqRef.current;
+      resolveInBrowser(t.id)
+        .then((url) => {
+          if (rid !== reqRef.current || engineRef.current !== 'audio') return;
+          bfRef.current.busy = false;
+          a.src = url;
+          return a.play();
+        })
+        .catch((e: { name?: string; message?: string }) => {
+          bfRef.current.busy = false;
+          if (rid !== reqRef.current || engineRef.current !== 'audio') return;
+          if (e?.name === 'NotAllowedError') {
+            setBuffering(false);
+            setPlaying(false);
+            return;
+          }
+          fallbackYT(t, `${why} | cadangan browser: ${e?.message || e?.name || 'gagal'}`);
+        });
+    },
+    [fallbackYT]
+  );
+
   const loadTrack = useCallback(
     (t: Track) => {
       currentRef.current = t;
@@ -193,6 +232,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       setBuffering(true);
       pushRecent(t);
       const rid = ++reqRef.current;
+      bfRef.current = { id: '', busy: false };
       engineRef.current = 'audio';
       setEngine('audio');
       setEngineNote('');
@@ -214,14 +254,14 @@ export default function Providers({ children }: { children: ReactNode }) {
           setPlaying(false);
           return;
         }
-        fallbackYT(t, `${e?.name || 'Error'}: ${e?.message || 'gagal memuat audio'}`);
+        handleFail(t, `${e?.name || 'Error'}: ${e?.message || 'gagal memuat audio'}`);
       };
       // src diganti secara sinkron (server yang resolve link), jadi tidak ada fetch
       // async di tengah pergantian lagu. Aman untuk background play.
       a.src = streamUrl(t.id);
       a.play().catch(onFail);
     },
-    [pushRecent, fallbackYT]
+    [pushRecent, fallbackYT, handleFail]
   );
 
   const play = useCallback(
@@ -271,7 +311,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   );
 
   stepRef.current = step;
-  fallbackRef.current = fallbackYT;
+  fallbackRef.current = handleFail;
 
   useEffect(() => {
     const a = new Audio();
