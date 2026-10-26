@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { QUALITIES, describeError, resolveAudio } from '@/lib/savetube';
 import { resolvePiped } from '@/lib/piped';
+import { resolveVidssave } from '@/lib/vidssave';
+import { resolveNanz } from '@/lib/nanz';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,7 +43,7 @@ export async function GET(req: Request) {
   const name = (searchParams.get('name') || id).replace(/[^\w\- ]+/g, '').trim().slice(0, 80) || id;
 
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
-    return NextResponse.json({ error: 'ID video tidak valid' }, { status: 400 });
+    return NextResponse.json({ error: `ID video tidak valid (diterima: "${id.slice(0, 40)}", ${id.length} karakter, harus 11)` }, { status: 400 });
   }
 
   const range = req.headers.get('range');
@@ -49,8 +51,32 @@ export async function GET(req: Request) {
   let got: { up: Response; type: string } | null = null;
   let source = '';
 
-  // 1) Piped
+  // 0) VidsSave
+  let vidUrl = '';
   try {
+    const v = await resolveVidssave(id);
+    vidUrl = v.url;
+    got = await grab(v.url, [{ 'User-Agent': UA }, { 'User-Agent': DESKTOP_UA }], range, 'vidssave-', notes);
+    if (got) source = 'vidssave';
+  } catch (e) {
+    notes.push(`vidssave: ${describeError(e)}`);
+  }
+
+  // 0b) Endpoint teman (izin sudah ada)
+  let nanzUrl = '';
+  if (!got) {
+    try {
+      const n = await resolveNanz(id);
+      nanzUrl = n.url;
+      got = await grab(n.url, [{ 'User-Agent': UA }, { 'User-Agent': DESKTOP_UA }], range, 'nanz-', notes);
+      if (got) source = 'nanz';
+    } catch (e) {
+      notes.push(`nanz: ${describeError(e)}`);
+    }
+  }
+
+  // 1) Piped
+  if (!got) try {
     const p = await resolvePiped(id);
     got = await grab(p.url, [{ 'User-Agent': UA }, { 'User-Agent': DESKTOP_UA }], range, `ambil-${p.source}-`, notes);
     if (got) source = `piped:${p.source}`;
@@ -77,6 +103,11 @@ export async function GET(req: Request) {
     } catch (e) {
       notes.push(`savetube: ${describeError(e)}`);
     }
+  }
+
+  if (!got && (vidUrl || nanzUrl) && searchParams.get('dl') !== '1') {
+    // Server tidak bisa mengambil file, coba biarkan browser mengambil langsung dari CDN.
+    return Response.redirect(vidUrl || nanzUrl, 302);
   }
 
   if (!got) {
