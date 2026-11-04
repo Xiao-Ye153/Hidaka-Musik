@@ -18,31 +18,17 @@ export function parseLrc(lrc: string): LyricLine[] {
 }
 
 export async function fetchLyrics(
-  title: string,
-  artist: string,
-  duration: number,
+  track: { id: string; title: string; artist: string },
   signal?: AbortSignal
 ): Promise<Lyrics | null> {
-  const clean = title.replace(/\(.*?\)|\[.*?\]/g, '').trim() || title;
+  const clean = track.title.replace(/\(.*?\)|\[.*?\]/g, '').trim() || track.title;
   const res = await fetch(
-    `/api/lyrics?title=${encodeURIComponent(clean)}&artist=${encodeURIComponent(artist)}`,
+    `/api/lyrics?id=${encodeURIComponent(track.id)}&title=${encodeURIComponent(clean)}&artist=${encodeURIComponent(track.artist)}`,
     { signal }
   );
-  const data: LrcItem[] = await res.json().catch(() => []);
-  if (!Array.isArray(data) || data.length === 0) return null;
-
-  const synced = data.filter((d) => d.syncedLyrics);
-  const pool = synced.length ? synced : data;
-  let best = pool[0];
-  if (duration > 0) {
-    best = pool.reduce(
-      (a, b) => (Math.abs((b.duration || 0) - duration) < Math.abs((a.duration || 0) - duration) ? b : a),
-      pool[0]
-    );
-  }
-
-  const lines = best.syncedLyrics ? parseLrc(best.syncedLyrics) : [];
-  const plain = best.plainLyrics || '';
-  if (lines.length === 0 && !plain) return null;
-  return { synced: lines, plain };
+  const data = await res.json().catch(() => null);
+  const synced: LyricLine[] = Array.isArray(data?.synced) ? data.synced : [];
+  const plain: string = typeof data?.plain === 'string' ? data.plain : '';
+  if (synced.length === 0 && !plain) return null;
+  return { synced, plain };
 }
