@@ -10,7 +10,6 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import { resolveInBrowser } from '@/lib/clientExtract';
 import { THEME_KEY, type ThemeId } from '@/lib/themes';
 import type { Track } from '@/lib/tracks';
 
@@ -58,7 +57,11 @@ const ThemeContext = createContext<ThemeCtx | null>(null);
 const PlayerContext = createContext<PlayerCtx | null>(null);
 const ProgressContext = createContext<ProgressCtx>({ time: 0, duration: 0 });
 
-const streamUrl = (id: string) => `/api/stream?id=${encodeURIComponent(id)}`;
+const streamUrl = (t: Track) =>
+  `/api/stream?id=${encodeURIComponent(t.id)}&title=${encodeURIComponent(t.title)}&artist=${encodeURIComponent(t.artist)}`;
+
+// ID YouTube = 11 karakter. Lagu lama / hasil impor playlist YouTube masih punya ID ini.
+const isYouTubeId = (id: string) => /^[A-Za-z0-9_-]{11}$/.test(id);
 
 const LIKED_KEY = 'nada_liked';
 const RECENT_KEY = 'hm_recent';
@@ -186,39 +189,18 @@ export default function Providers({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Gagal memuat audio dari server -> coba cadangan di browser sekali, baru jatuh ke YouTube.
+  // Gagal memuat audio dari server. Lagu ber-ID YouTube (lama / impor playlist) masih boleh jatuh
+  // ke player YouTube; lagu Joox cukup berhenti dan menampilkan pesan error.
   const handleFail = useCallback(
     (t: Track, why: string) => {
       if (engineRef.current !== 'audio') return;
-      const a = audioRef.current;
-      if (!a) {
+      if (isYouTubeId(t.id)) {
         fallbackYT(t, why);
         return;
       }
-      if (bfRef.current.id === t.id) {
-        if (bfRef.current.busy) return; // kegagalan ganda dari event yang sama
-        fallbackYT(t, why);
-        return;
-      }
-      bfRef.current = { id: t.id, busy: true };
-      const rid = reqRef.current;
-      resolveInBrowser(t.id)
-        .then((url) => {
-          if (rid !== reqRef.current || engineRef.current !== 'audio') return;
-          bfRef.current.busy = false;
-          a.src = url;
-          return a.play();
-        })
-        .catch((e: { name?: string; message?: string }) => {
-          bfRef.current.busy = false;
-          if (rid !== reqRef.current || engineRef.current !== 'audio') return;
-          if (e?.name === 'NotAllowedError') {
-            setBuffering(false);
-            setPlaying(false);
-            return;
-          }
-          fallbackYT(t, `${why} | cadangan browser: ${e?.message || e?.name || 'gagal'}`);
-        });
+      setBuffering(false);
+      setPlaying(false);
+      setEngineNote(why);
     },
     [fallbackYT]
   );
@@ -258,7 +240,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       };
       // src diganti secara sinkron (server yang resolve link), jadi tidak ada fetch
       // async di tengah pergantian lagu. Aman untuk background play.
-      a.src = streamUrl(t.id);
+      a.src = streamUrl(t);
       a.play().catch(onFail);
     },
     [pushRecent, fallbackYT, handleFail]
