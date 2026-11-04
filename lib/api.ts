@@ -8,7 +8,7 @@ export async function searchTracks(q: string, max = 12, signal?: AbortSignal): P
   const key = `${q}|${max}`;
   const hit = mem.get(key);
   if (hit) return hit;
-  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&max=${max}`, { signal });
+  const res = await fetch(`/api/music-search?q=${encodeURIComponent(q)}&max=${max}`, { signal });
   const data = await res.json().catch(() => null);
   if (!res.ok || !Array.isArray(data)) {
     throw new Error((data && data.error) || 'Pencarian gagal');
