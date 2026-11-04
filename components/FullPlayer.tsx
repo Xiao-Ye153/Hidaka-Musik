@@ -130,7 +130,7 @@ function FullBody({ track }: { track: Track }) {
     }
     const ctl = new AbortController();
     setLyState('loading');
-    fetchLyrics(track.title, track.artist, duration, ctl.signal)
+    fetchLyrics(track, ctl.signal)
       .then((r) => {
         lyricCache.set(track.id, r);
         setLyrics(r);
@@ -254,7 +254,7 @@ function FullBody({ track }: { track: Track }) {
     if (dlBusy) return;
     setDlBusy(true);
     window.open(
-      `/api/stream?id=${encodeURIComponent(track.id)}&q=128&dl=1&name=${encodeURIComponent(track.title)}`,
+      `/api/stream?id=${encodeURIComponent(track.id)}&title=${encodeURIComponent(track.title)}&artist=${encodeURIComponent(track.artist)}&dl=1&name=${encodeURIComponent(track.title)}`,
       '_blank',
       'noopener'
     );
@@ -290,7 +290,7 @@ function FullBody({ track }: { track: Track }) {
         </button>
       </div>
       <div style={{ textAlign: 'center', fontSize: 11, opacity: 0.75, padding: '0 16px 4px' }}>
-        {engine === 'audio' ? 'Mesin: audio (bisa di background)' : `Mesin: YouTube (mati di background) — ${engineNote}`}
+        {engine === 'audio' ? (engineNote ? `Gagal memuat audio — ${engineNote}` : 'Mesin: audio (bisa di background)') : `Mesin: YouTube (mati di background) — ${engineNote}`}
       </div>
 
       <div className="full-scroll">
