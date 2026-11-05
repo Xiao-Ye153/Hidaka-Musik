@@ -58,23 +58,72 @@ function decodeEntities(s: string) {
     .replace(/&gt;/g, '>');
 }
 
+// Cari semua objek `song_info` di mana pun posisinya di state halaman (struktur Joox bisa berubah).
+function collectSongInfos(node: any, out: any[], depth = 0) {
+  if (!node || typeof node !== 'object' || depth > 10 || out.length > 200) return;
+  if (Array.isArray(node)) {
+    for (const n of node) collectSongInfos(n, out, depth + 1);
+    return;
+  }
+  const si = node.song_info;
+  if (si && typeof si === 'object' && si.id) out.push(si);
+  for (const k of Object.keys(node)) {
+    if (k === 'song_info') continue;
+    collectSongInfos(node[k], out, depth + 1);
+  }
+}
+
+function toTrack(s: any): JooxTrack {
+  return {
+    id: s.id,
+    title: decodeEntities(String(s.name || '')),
+    artist: ((s.artist_list || []) as any[]).map((a) => a?.name).filter(Boolean).join(', '),
+    thumb: pickThumb(s.images),
+    duration: Number(s.play_duration) || undefined
+  };
+}
+
 export async function searchJoox(keyword: string): Promise<JooxTrack[]> {
   const html = await getHtml(`${BASE_URL}/${REGION}/search/${encodeURIComponent(keyword)}`, 'Pencarian Joox');
   const data = extractNextData(html);
-  const items: any[] = data?.props?.pageProps?.searchSections?.songs?.item_list || [];
+  const infos: any[] = [];
+  collectSongInfos(data?.props?.pageProps, infos);
+  const seen = new Set<string>();
   const out: JooxTrack[] = [];
-  for (const item of items) {
-    const s = item?.song?.[0]?.song_info;
-    if (!s?.id) continue;
-    out.push({
-      id: s.id,
-      title: decodeEntities(String(s.name || '')),
-      artist: ((s.artist_list || []) as any[]).map((a) => a?.name).filter(Boolean).join(', '),
-      thumb: pickThumb(s.images),
-      duration: Number(s.play_duration) || undefined
-    });
+  for (const s of infos) {
+    if (seen.has(s.id)) continue;
+    seen.add(s.id);
+    out.push(toTrack(s));
   }
   return out;
+}
+
+// Dipakai ?debug=1 untuk lihat apa yang sebenarnya dikirim Joox ke server Vercel.
+export async function debugSearch(keyword: string) {
+  const url = `${BASE_URL}/${REGION}/search/${encodeURIComponent(keyword)}`;
+  const res = await fetch(url, { headers: HEADERS, cache: 'no-store', signal: AbortSignal.timeout(10000) });
+  const html = await res.text();
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  let pageProps: any = null;
+  try {
+    pageProps = m ? JSON.parse(m[1])?.props?.pageProps : null;
+  } catch {}
+  const infos: any[] = [];
+  collectSongInfos(pageProps, infos);
+  const sections = pageProps?.searchSections;
+  return {
+    status: res.status,
+    finalUrl: res.url,
+    htmlLength: html.length,
+    title: (html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || null,
+    hasNextData: !!m,
+    pagePropsKeys: pageProps ? Object.keys(pageProps) : null,
+    searchSectionsKeys: sections ? Object.keys(sections) : null,
+    songsKeys: sections?.songs ? Object.keys(sections.songs) : null,
+    songInfoFound: infos.length,
+    firstSongInfoKeys: infos[0] ? Object.keys(infos[0]) : null,
+    htmlHead: m ? null : html.slice(0, 400)
+  };
 }
 
 // Kalau ID bukan ID Joox (lagu lama dari YouTube / playlist impor), cari padanannya di Joox lewat judul + artis.
