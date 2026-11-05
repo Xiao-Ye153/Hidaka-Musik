@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchJoox } from '@/lib/joox';
+import { debugSearch, searchJoox } from '@/lib/joox';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,6 +12,14 @@ export async function GET(req: Request) {
   const q = (searchParams.get('q') || '').trim();
   const max = Math.min(Math.max(Number(searchParams.get('max') || 12), 1), 30);
   if (!q) return NextResponse.json({ error: 'Query required' }, { status: 400 });
+
+  if (searchParams.get('debug') === '1') {
+    try {
+      return NextResponse.json(await debugSearch(q));
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 502 });
+    }
+  }
 
   const cleaned = q.replace(NOISE, ' ').replace(/\s+/g, ' ').trim() || q;
   const words = cleaned.split(' ');
